@@ -6,7 +6,7 @@ Set the following environmental variables for your app:
 
 `KRB_SERVICE_ACCOUNT`: service account under which app runs in `username@domain.com` format 
 `KRB_PASSWORD`: service account password
-`KRB5_KDC`: (optional) Kerberos Key Distribution Center address. Defaults to domain port of `KRB_SERVICE_ACCOUNT`
+`KRB5_KDC`: (optional) Kerberos Key Distribution Center address. Defaults to domain part of `KRB_SERVICE_ACCOUNT`
 
 Ensure that you have right SPNs in place for the service you're trying to authenticate to.
 
