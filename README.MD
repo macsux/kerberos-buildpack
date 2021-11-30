@@ -1,73 +1,36 @@
-This project offers simplified way of creating buildpacks for Cloud Foundry in .NET
-
-Buildpacks fall into two categories: supply and final. Supply buildpacks can be chained to supply dependencies to the app or modify its configuration. They essentially act as middleware. Final buildpack is the one that is launched in the end of the buildpack chain and is responsible for telling Cloud Foundry the startup command for the application.
-
-## Quick Start
-
-This is a template project that can be used by DotNet CLI to boostrap a new buildpack. Install it into CLI via
-
-```shell
-dotnet new -i CloudFoundry.Buildpack.V2
-```
-
-The embedded build scripts rely on Git to do versioning through the use of [GitVersion](https://gitversion.readthedocs.io/en/latest/). This means that you need to initialize a git repo and create at least one commit
-
-```shell
-git init
-git add .
-git commit -m Initial
-```
-
-#### How to implement
-
-Start with `MyBuilpack` class. Depending on the type of buildpack you're creating, inherit either from `SupplyBuildpack` or `FinalBuildpack` and implement the `Detect`, `Apply`, and in the case of final buildpack the `GetStartupCommand`.
-
-## How to package
-
-Included build packaging is based on Nuke.Build project. Either use the included build shell scripts, or install IDE plugins to run included targets. Get full list of useful targets and parameters with `--help` argument for the build script. 
-
-You can build buildpack that are compatible with both Windows and Linux stacks, however when targeting Windows stack it can only be compiled on a Windows machine.
-
-The provided build script accepts one argument to specify the stack you're targeting. Windows stack will leverage .NET Framework (which is already included in the stemcell), resulting in smaller buildpack. When targeting Linux, the buildpack will be assembled with .NET core as self-contained (resulting in ~22mb package).
-
-### Compiling on Windows
-
-```powershell
-.\build.ps1 --stack windows
-```
-
-or
-
-```powershell
-.\build.ps1 --stack linux
-```
-
-### Compiling on Linux or Mac
-
-```bash
-./build.sh --stack linux
-```
-
-Final output will be placed in `/artifacts` folder
-
-## How to Release
-
-Use the embedded `Release` target to create and publish buildpack as asset to GitHub releases. This requires you have remote repo set and have specified API Key as parameter (or set via environmental variable).
+This buildpack sets up Kerberos authentication on Linux, allowing Kerberos and Integrated Windows Authentication to work natively in .NET and Java apps. 
 
 ## How to use
 
-* Option 1: Upload to Cloud Foundry via `cf create-buildpack` option and reference in manifest by name
-* Option 2: Upload to a public host (like GitHub releases page) and reference in manifest via URL
+Set the following environmental variables for your app:
 
-#### Sample manifest
+`KRB_SERVICE_ACCOUNT`: service account under which app runs in `username@domain.com` format 
+`KRB_PASSWORD`: service account password
+`KRB5_KDC`: (optional) Kerberos Key Distribution Center address. Defaults to domain port of `KRB_SERVICE_ACCOUNT`
 
+Ensure that you have right SPNs in place for the service you're trying to authenticate to.
+
+Sample manifest:
 
 ```yaml
+---
 applications:
-- name: simpleapp
-  stack: windows2016
+- name: TestKerberos
+  path: bin/Debug/net5.0/publish
+  random-route: true
+  memory: 256M
+  health-check-type: none
   buildpacks: 
-    - https://github.com/macsux/web-config-transform-buildpack/releases/download/1.0/web-config-transform-buildpack.zip
-    - hwc_buildpack
+    - https://github.com/macsux/kerberos-buildpack/releases/download/v0.1.0/KerberosBuildpack-linux-x64-0.1.0.zip
+    - dotnet_core_buildpack
+  env:
+    KRB5_KDC: ad.almirex.com
+    KRB_SERVICE_ACCOUNT: iwaclient@almirex.dc
+    KRB_PASSWORD: P@ssw0rd
+
 ```
 
+## How it works
+Core libraries used by .NET and Java apps use MIT Kerberos to do Kerberos (aka Integrated) authentication when running on Linux. This buildpack configures MIT Kerberos, and obtains the necessary initial TGT tickets necessary for the app to acquire authentication tickets.
+
+A sidecar runs in background that will obtain tickets Kerberos .NET 

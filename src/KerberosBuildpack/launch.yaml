@@ -1,7 +1,7 @@
 ---
 processes:
   - type: "krb-tgt-refresher"
-    command: "$DEPS_DIR/@bpIndex/buildpack PreStartup @bpIndex"
+    command: "/home/vcap/deps/@bpIndex/buildpack PreStartup @bpIndex"
     limits:
       memory: 256
     platforms:

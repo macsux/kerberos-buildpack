@@ -51,7 +51,7 @@ namespace KerberosBuildpack
             string template = reader.ReadToEnd();
             
             var launchYaml = template.Replace("@bpIndex", index.ToString());
-            File.WriteAllText(Path.Combine(myDependenciesDirectory, "launch.yaml"), launchYaml);
+            File.WriteAllText(Path.Combine(myDependenciesDirectory, "launch.yml"), launchYaml);
         }
         public override void PreStartup(string buildPath, string depsPath, int index)
         {
