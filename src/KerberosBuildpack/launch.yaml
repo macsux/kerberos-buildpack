@@ -1,0 +1,9 @@
+---
+processes:
+  - type: "krb-tgt-refresher"
+    command: "$DEPS_DIR/@bpIndex/buildpack PreStartup @bpIndex"
+    limits:
+      memory: 256
+    platforms:
+      cloudfoundry:
+        sidecar_for: ["web"]

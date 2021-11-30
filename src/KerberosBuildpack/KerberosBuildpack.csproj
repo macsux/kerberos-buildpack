@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RuntimeIdentifiers>linux-x64</RuntimeIdentifiers>
+    <RootNamespace>KerberosBuildpack</RootNamespace>
+    <AssemblyName>buildpack</AssemblyName>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandDotNet" Version="3.0.2" />
+    <PackageReference Include="Kerberos.NET" Version="4.5.124" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KerberosCommon\KerberosCommon.csproj" />
+    <ProjectReference Include="..\KerberosTicketRefresher\KerberosTicketRefresher.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="launch.yaml"/>
+  </ItemGroup>
+    
+</Project>
