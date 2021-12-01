@@ -1,9 +1,10 @@
 ---
 processes:
-  - type: "krb-tgt-refresher"
-    command: "/home/vcap/deps/@bpIndex/buildpack PreStartup @bpIndex"
+  - type: "krb"
+    #command: "/home/vcap/deps/@bpIndex/buildpack PreStartup @bpIndex"
+    command: "while true; do echo hello from a sidecar; sleep 10; done"
     limits:
       memory: 256
-    platforms:
+    platforms: 
       cloudfoundry:
         sidecar_for: ["web"]

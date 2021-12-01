@@ -48,12 +48,22 @@ namespace KerberosBuildpack
         public void PreStartup(int index)
         {
             var appHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                appHome = Path.Combine(appHome, "app");
             PreStartup(appHome, Environment.GetEnvironmentVariable("DEPS_DIR"), index);
             var profiled = Path.Combine(appHome, ".profile.d");
             InstallStartupEnvVars(profiled, index, true);
         }
+
+        public void Sidecar(int index)
+        {
+            var appHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            Sidecar(appHome, Environment.GetEnvironmentVariable("DEPS_DIR"), index);
+        }
+
+        public virtual void Sidecar(string buildPath, string depsPath, int index)
+        {
+            
+        }
+
         protected void DoApply(string buildPath, string cachePath, string depsPath, int index)
         {
             Apply(buildPath, cachePath, depsPath, index);
@@ -72,23 +82,22 @@ namespace KerberosBuildpack
                     File.Copy(file, Path.Combine(buildpackDepsDir, Path.GetFileName(file)), true);
                 }
 
-                var extension = !IsLinux ? ".exe" : string.Empty;
-                var prestartCommand = $"{GetType().Assembly.GetName().Name}{extension} PreStartup";
+                var prestartCommand = $"{GetType().Assembly.GetName().Name} PreStartup";
                 // write startup shell script to call buildpack prestart lifecycle event in deps dir
-                var startupScriptName = $"{index:00}_{nameof(KerberosBuildpack)}_startup";
-                if (IsLinux)
+                var startupScriptName = $"{index:00}_{nameof(KerberosBuildpack)}_startup.sh";
+                var startupScript = $"#!/bin/bash\n$DEPS_DIR/{index}/{prestartCommand} {index}\n";
+                var sidecarOverriden =  GetType().GetMethod(nameof(Sidecar), BindingFlags.Instance | BindingFlags.Public, null, new[] {typeof(string),typeof(string),typeof(int) }, null  )?.DeclaringType != typeof(BuildpackBase);
+                if (sidecarOverriden)
                 {
-                    File.WriteAllText(Path.Combine(profiled,$"{startupScriptName}.sh"), $"#!/bin/bash\n$DEPS_DIR/{index}/{prestartCommand} {index}");
+                    startupScript += $"$DEPS_DIR/{index}/{GetType().Assembly.GetName().Name} Sidecar {index} &\n";
                 }
-                else
-                {
-                    File.WriteAllText(Path.Combine(profiled,$"{startupScriptName}.bat"),$@"%DEPS_DIR%\{index}\{prestartCommand} {index}");
-                }
+                File.WriteAllText(Path.Combine(profiled,startupScriptName), startupScript);
                 InstallStartupEnvVars(profiled, index, false);
                 GetEnvScriptFile(profiled, index, true); // causes empty env file to be created so it can (potentially) be populated with vars during onstart hook
             }
             
         }
+
         private string GetEnvScriptFile(string profiled, int index, bool isPreStart)
         {
             var prefix = isPreStart ? "z" : string.Empty;

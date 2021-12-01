@@ -36,5 +36,9 @@ namespace KerberosBuildpack
         {
             _buildpack.PreStartup(index);
         }
+        public void Sidecar([Operand(Description = "Number that represents the ordinal position of the buildpack")]int index)
+        {
+            _buildpack.Sidecar(index);
+        }
     }
 }

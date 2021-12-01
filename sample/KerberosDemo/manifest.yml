@@ -1,0 +1,14 @@
+---
+applications:
+- name: KerberosDemo
+  path: bin/Debug/net5.0/linux-x64/publish
+  memory: 256M
+  health-check-type: none
+  buildpacks: 
+    - https://github.com/macsux/kerberos-buildpack/releases/download/v0.1.0/KerberosBuildpack-linux-x64-0.1.0.zip
+    - dotnet_core_buildpack
+  env:
+    KRB5_KDC: ad.almirex.com
+    KRB_SERVICE_ACCOUNT: iwaclient@almirex.dc
+    KRB_PASSWORD: P@ssw0rd
+    ConnectionStrings__SqlServer: Server=ad.almirex.com;Database=master;Trusted_Connection=True;TrustServerCertificate=True
