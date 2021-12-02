@@ -29,14 +29,17 @@ namespace KerberosDemo
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
+            var serviceAccount = Environment.GetEnvironmentVariable("KRB_SERVICE_ACCOUNT")!;
+            var password = Environment.GetEnvironmentVariable("KRB_PASSWORD")!;
+            var kdcStr = Environment.GetEnvironmentVariable("KRB5_KDC");
+            var domain = serviceAccount.Split("@").Last();
+            var ldapAddress = kdcStr != null ? kdcStr.Split(";").First() : domain;
             services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
-                // .AddNegotiate();
                 .AddNegotiate(c => c
                     .EnableLdap(ldap =>
                     {
-                        ldap.LdapConnection = new LdapConnection(new LdapDirectoryIdentifier("ad.almirex.com", true, false), new NetworkCredential("iwaclient@almirex.dc", "P@ssw0rd"), AuthType.Basic);
-                        ldap.Domain = "almirex.dc";
+                        ldap.LdapConnection = new LdapConnection(new LdapDirectoryIdentifier(ldapAddress, true, false), new NetworkCredential(serviceAccount, password), AuthType.Basic);
+                        ldap.Domain = domain;
                         ldap.LdapConnection.SessionOptions.ReferralChasing = ReferralChasingOptions.None;
                         ldap.LdapConnection.SessionOptions.ProtocolVersion = 3; //Setting LDAP Protocol to latest version
                         ldap.LdapConnection.AutoBind = true;
@@ -51,14 +54,9 @@ namespace KerberosDemo
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "KerberosDemo v1"));
-            }
-
-            app.UseHttpsRedirection();
+            app.UseDeveloperExceptionPage();
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "KerberosDemo v1"));
 
             app.UseRouting();
             app.UseAuthentication();

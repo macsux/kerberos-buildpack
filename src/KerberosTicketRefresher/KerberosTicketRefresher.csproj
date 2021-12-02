@@ -13,8 +13,5 @@
     <PackageReference Include="Kerberos.NET" Version="4.5.124" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\KerberosCommon\KerberosCommon.csproj" />
-  </ItemGroup>
+  
 </Project>

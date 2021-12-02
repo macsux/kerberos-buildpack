@@ -1,12 +1,5 @@
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using Kerberos.NET.Client;
-using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
-using KerberosCommon;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace KerberosTicketRefresher;
