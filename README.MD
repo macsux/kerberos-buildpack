@@ -31,6 +31,11 @@ applications:
 ```
 
 ## How it works
+
+![](./docs/img/architecture.jpg)
+
+
+
 Core libraries used by .NET and Java apps use MIT Kerberos to do Kerberos (aka Integrated) authentication when running on Linux. This buildpack configures MIT Kerberos, and obtains the necessary initial TGT tickets necessary for the app to acquire authentication tickets.
 
 A sidecar runs in background that will obtain tickets Kerberos .NET 
