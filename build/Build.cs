@@ -15,6 +15,7 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitHub;
 using Nuke.Common.Tools.GitVersion;
+using Nuke.Common.Tools.NerdbankGitVersioning;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
 using static Nuke.Common.IO.FileSystemTasks;
@@ -41,7 +42,7 @@ class Build : NukeBuild
     }
     public static int Main () => Execute<Build>(x => x.Publish);
     const string BuildpackProjectName = "KerberosBuildpack";
-    string GetPackageZipName(string runtime) => $"{BuildpackProjectName}-{runtime}-{GitVersion.MajorMinorPatch}.zip";
+    string GetPackageZipName(string runtime) => $"{BuildpackProjectName}-{runtime}-{GitVersion.NuGetPackageVersion}.zip";
 
     
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
@@ -55,6 +56,7 @@ class Build : NukeBuild
 
     [Parameter("Application directory against which buildpack will be applied")]
     readonly string ApplicationDirectory;
+    
 
     IEnumerable<PublishTarget> PublishCombinations
     {
@@ -69,7 +71,8 @@ class Build : NukeBuild
 
     [Solution] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
-    [GitVersion] readonly GitVersion GitVersion;
+    [NerdbankGitVersioning(UpdateBuildNumber = true)] readonly NerdbankGitVersioning GitVersion;
+
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "tests";
@@ -96,9 +99,9 @@ class Build : NukeBuild
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
                 
-                .SetAssemblyVersion(GitVersion.AssemblySemVer)
-                .SetFileVersion(GitVersion.AssemblySemFileVer)
-                .SetInformationalVersion(GitVersion.InformationalVersion)
+                .SetAssemblyVersion(Nuke.Common.Tools.GitVersion.GitVersion.AssemblySemVer)
+                .SetFileVersion(Nuke.Common.Tools.GitVersion.GitVersion.AssemblySemFileVer)
+                .SetInformationalVersion(Nuke.Common.Tools.GitVersion.GitVersion.InformationalVersion)
                 .CombineWith(PublishCombinations, (c, p) => c
                     .SetFramework(p.Framework)
                     .SetRuntime(p.Runtime)));
@@ -129,9 +132,9 @@ class Build : NukeBuild
                     .SetFramework(framework)
                     .SetRuntime(runtime)
                     .EnableSelfContained()
-                    .SetAssemblyVersion(GitVersion.AssemblySemVer)
-                    .SetFileVersion(GitVersion.AssemblySemFileVer)
-                    .SetInformationalVersion(GitVersion.InformationalVersion)
+                    .SetAssemblyVersion(Nuke.Common.Tools.GitVersion.GitVersion.AssemblySemVer)
+                    .SetFileVersion(Nuke.Common.Tools.GitVersion.GitVersion.AssemblySemFileVer)
+                    .SetInformationalVersion(Nuke.Common.Tools.GitVersion.GitVersion.InformationalVersion)
                 );
 
                 var lifecycleBinaries = Solution.GetProjects("Lifecycle*")
@@ -175,7 +178,7 @@ class Build : NukeBuild
                 var owner = gitIdParts[0];
                 var repoName = gitIdParts[1];
     
-                var releaseName = $"v{GitVersion.MajorMinorPatch}";
+                var releaseName = $"v{Nuke.Common.Tools.GitVersion.GitVersion.MajorMinorPatch}";
                 Release release;
                 try
                 {

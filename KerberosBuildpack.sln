@@ -26,6 +26,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_solution", "_solution", "{
 		README.MD = README.MD
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CcgPlugin", "src\CcgPlugin\CcgPlugin.csproj", "{8A8F0F10-04A9-4726-9592-22ED3797761B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,6 +60,10 @@ Global
 		{6D05C4AD-EE88-4359-8BCD-02B5C32CB26C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6D05C4AD-EE88-4359-8BCD-02B5C32CB26C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6D05C4AD-EE88-4359-8BCD-02B5C32CB26C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A8F0F10-04A9-4726-9592-22ED3797761B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A8F0F10-04A9-4726-9592-22ED3797761B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A8F0F10-04A9-4726-9592-22ED3797761B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A8F0F10-04A9-4726-9592-22ED3797761B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -74,5 +80,6 @@ Global
 		{512F3F46-B79C-40C7-B148-7E1DDDE3DA54} = {7BF14C44-4B4C-4973-B7AD-1C2D45242AE2}
 		{F6E63DDE-EC41-4756-A6A3-7BF6A3ACC172} = {A989B8EF-B8C1-4BA9-BF91-B3B0529E4584}
 		{6D05C4AD-EE88-4359-8BCD-02B5C32CB26C} = {7BF14C44-4B4C-4973-B7AD-1C2D45242AE2}
+		{8A8F0F10-04A9-4726-9592-22ED3797761B} = {7BF14C44-4B4C-4973-B7AD-1C2D45242AE2}
 	EndGlobalSection
 EndGlobal
