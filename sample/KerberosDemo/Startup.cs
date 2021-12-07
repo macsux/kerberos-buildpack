@@ -29,21 +29,30 @@ namespace KerberosDemo
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var serviceAccount = Environment.GetEnvironmentVariable("KRB_SERVICE_ACCOUNT")!;
-            var password = Environment.GetEnvironmentVariable("KRB_PASSWORD")!;
-            var kdcStr = Environment.GetEnvironmentVariable("KRB5_KDC");
-            var domain = serviceAccount.Split("@").Last();
-            var ldapAddress = kdcStr != null ? kdcStr.Split(";").First() : domain;
+            // var serviceAccount = Environment.GetEnvironmentVariable("KRB_SERVICE_ACCOUNT");
+            // if (services == null)
+            // {
+            //     throw new Exception("KRB_SERVICE_ACCOUNT must be set");
+            // }
+            // var password = Environment.GetEnvironmentVariable("KRB_PASSWORD")!;
+            // if (password == null)
+            // {
+            //     throw new Exception("KRB_PASSWORD must be set");
+            // }
+            // var kdcStr = Environment.GetEnvironmentVariable("KRB5_KDC");
+            // var domain = serviceAccount.Split("@").Last();
+            // var ldapAddress = kdcStr != null ? kdcStr.Split(";").First() : domain;
             services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
-                .AddNegotiate(c => c
-                    .EnableLdap(ldap =>
-                    {
-                        ldap.LdapConnection = new LdapConnection(new LdapDirectoryIdentifier(ldapAddress, true, false), new NetworkCredential(serviceAccount, password), AuthType.Basic);
-                        ldap.Domain = domain;
-                        ldap.LdapConnection.SessionOptions.ReferralChasing = ReferralChasingOptions.None;
-                        ldap.LdapConnection.SessionOptions.ProtocolVersion = 3; //Setting LDAP Protocol to latest version
-                        ldap.LdapConnection.AutoBind = true;
-                    }));
+                .AddNegotiate();
+                // .AddNegotiate(c => c
+                //     .EnableLdap(ldap =>
+                //     {
+                //         ldap.LdapConnection = new LdapConnection(new LdapDirectoryIdentifier(ldapAddress, true, false), new NetworkCredential(serviceAccount, password), AuthType.Basic);
+                //         ldap.Domain = domain;
+                //         ldap.LdapConnection.SessionOptions.ReferralChasing = ReferralChasingOptions.None;
+                //         ldap.LdapConnection.SessionOptions.ProtocolVersion = 3; //Setting LDAP Protocol to latest version
+                //         ldap.LdapConnection.AutoBind = true;
+                //     }));
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
