@@ -1,4 +1,4 @@
-# Experiments to get gMSA Container Credentials Manager working. 
+# Experiments to get Container Credentials Manager working with custom plugin. 
 
 ### Goal: 
 
@@ -10,7 +10,7 @@ https://docs.microsoft.com/en-us/windows/win32/api/ccgplugins/nf-ccgplugins-iccg
 
 ### Current problem: 
 
-Cannot get CCM to activate COM component
+Cannot get CCM to activate COM plugin component
 
 ### What has been tried:
 
@@ -105,3 +105,44 @@ otherType.InvokeMember("GetPasswordCredentials", BindingFlags.InvokeMethod | Bin
 ### AKS plugin
 
 It was confirmed that AKS plugin that implements the above interface does work and is able to be spun up and start container with GMSA creds as per this article. https://docs.microsoft.com/en-us/azure/aks/use-group-managed-service-accounts
+
+### Other observations
+
+Given that COM plugin has constructor logic that writes a marker file to `c:\temp`, the lack of said file when attempting to start container with `--security-opt` would imply that COM method signature conforming to an interface is not a problem, as COM object would be instantiated before the method call. Since it's not being created, seems like CCG subsystem is not picking up the plugin registration properly. 
+
+The experiment was repeated by copying the DLL to an AKS node where Azure's Vault CCG plugin is installed, registering it and adding the necessary CCG registry entries. No COM activation was observed in that environment either.
+
+## Primary test Environment
+
+```
+PS C:\projects> [Environment]::OSVersion
+
+Platform ServicePack Version      VersionString
+-------- ----------- -------      -------------
+ Win32NT             10.0.19043.0 Microsoft Windows NT 10.0.19043.0
+
+
+PS C:\projects> docker version
+Client:
+ Cloud integration: v1.0.20
+ Version:           20.10.10
+ API version:       1.41
+ Go version:        go1.16.9
+ Git commit:        b485636
+ Built:             Mon Oct 25 07:47:53 2021
+ OS/Arch:           windows/amd64
+ Context:           default
+ Experimental:      true
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          20.10.10
+  API version:      1.41 (minimum version 1.24)
+  Go version:       go1.16.9
+  Git commit:       e2f740d
+  Built:            Mon Oct 25 07:43:13 2021
+  OS/Arch:          windows/amd64
+  Experimental:     false
+PS C:\projects>
+```
+
