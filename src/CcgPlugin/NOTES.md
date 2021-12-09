@@ -12,6 +12,12 @@ az keyvault secret set --vault-name macsux-vault --name "GMSADomainUserCred" --v
 
 ```
 
+Confirm dll is 64bit
+
+```
+dumpbin /header CCGAKVPlugin.dll
+```
+
 
 
 
@@ -60,14 +66,3 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\RegAsm.exe CcgPlugin.dll /codeba
 
 
 
-1. TBS
-
-2. Observability
-
-3. Accelerator
-
-   
-
-4. App Catalog
-
-5. Introduction to TAP
