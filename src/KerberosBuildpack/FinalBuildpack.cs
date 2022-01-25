@@ -1,20 +1,21 @@
 using System;
+using NMica.Utils.IO;
 
 namespace KerberosBuildpack
 {
     public abstract class FinalBuildpack : BuildpackBase
     {
-        public sealed override void Supply(string buildPath, string cachePath, string depsPath, int index)
+        public sealed override void Supply(AbsolutePath buildPath, AbsolutePath cachePath, AbsolutePath depsPath, int index)
         {
             // do nothing, we always apply in finalize
         }
 
-        public sealed override void Finalize(string buildPath, string cachePath, string depsPath, int index)
+        public sealed override void Finalize(AbsolutePath buildPath, AbsolutePath cachePath, AbsolutePath depsPath, int index)
         {
             DoApply(buildPath, cachePath, depsPath, index);
         }
 
-        public sealed override void Release(string buildPath)
+        public sealed override void Release(AbsolutePath buildPath)
         {
             Console.WriteLine("default_process_types:");
             Console.WriteLine($"  web: {GetStartupCommand(buildPath)}");
@@ -25,7 +26,7 @@ namespace KerberosBuildpack
         /// </summary>
         /// <param name="buildPath">Directory path to the application</param>
         /// <returns>Startup command executed by Cloud Foundry to launch the application</returns>
-        public abstract string GetStartupCommand(string buildPath);
+        public abstract string GetStartupCommand(AbsolutePath buildPath);
         
     }
 }

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using NMica.Utils.IO;
 
 namespace KerberosBuildpack
 {
@@ -22,15 +23,15 @@ namespace KerberosBuildpack
         /// </summary>
         /// <param name="buildPath">Directory path to the application</param>
         /// <returns>True if buildpack should be applied, otherwise false</returns>
-        public abstract bool Detect(string buildPath);
-        public abstract void Supply(string buildPath, string cachePath, string depsPath, int index);
-        public abstract void Finalize(string buildPath, string cachePath, string depsPath, int index);
-        public abstract void Release(string buildPath);
+        public abstract bool Detect(AbsolutePath buildPath);
+        public abstract void Supply(AbsolutePath buildPath, AbsolutePath cachePath, AbsolutePath depsPath, int index);
+        public abstract void Finalize(AbsolutePath buildPath, AbsolutePath cachePath, AbsolutePath depsPath, int index);
+        public abstract void Release(AbsolutePath buildPath);
 
         /// <summary>
         /// Code that will execute during the run stage before the app is started
         /// </summary>
-        public virtual void PreStartup(string buildPath, string depsPath, int index)
+        public virtual void PreStartup(AbsolutePath buildPath, AbsolutePath? depsPath, int index)
         {
         }
 
@@ -42,42 +43,32 @@ namespace KerberosBuildpack
         /// <param name="cachePath">Location the buildpack can use to store assets during the build process</param>
         /// <param name="depsPath">Directory where dependencies provided by all buildpacks are installed. New dependencies introduced by current buildpack should be stored inside subfolder named with index argument ({depsPath}/{index})</param>
         /// <param name="index">Number that represents the ordinal position of the buildpack</param>
-        protected abstract void Apply(string buildPath, string cachePath, string depsPath, int index);
+        protected abstract void Apply(AbsolutePath buildPath, AbsolutePath cachePath, AbsolutePath depsPath, int index);
 
 
         public void PreStartup(int index)
         {
-            var appHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            PreStartup(appHome, Environment.GetEnvironmentVariable("DEPS_DIR"), index);
-            var profiled = Path.Combine(appHome, ".profile.d");
+            var appHome = (AbsolutePath)Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            PreStartup(appHome, (AbsolutePath)Environment.GetEnvironmentVariable("DEPS_DIR"), index);
+            var profiled = appHome / ".profile.d";
             InstallStartupEnvVars(profiled, index, true);
         }
 
-        public void Sidecar(int index)
-        {
-            var appHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            Sidecar(appHome, Environment.GetEnvironmentVariable("DEPS_DIR"), index);
-        }
-
-        public virtual void Sidecar(string buildPath, string depsPath, int index)
-        {
-            
-        }
-
-        protected void DoApply(string buildPath, string cachePath, string depsPath, int index)
+        protected void DoApply(AbsolutePath buildPath, AbsolutePath cachePath, AbsolutePath depsPath, int index)
         {
             Apply(buildPath, cachePath, depsPath, index);
             
-            var isPreStartOverriden = GetType().GetMethod(nameof(PreStartup), BindingFlags.Instance | BindingFlags.Public, null, new[] {typeof(string),typeof(string),typeof(int) }, null  )?.DeclaringType != typeof(BuildpackBase);
+            var isPreStartOverriden = GetType().GetMethod(nameof(PreStartup), BindingFlags.Instance | BindingFlags.Public, null, new[] {typeof(AbsolutePath),typeof(AbsolutePath),typeof(int) }, null  )?.DeclaringType != typeof(BuildpackBase);
             var buildpackDepsDir = Path.Combine(depsPath, index.ToString());
             Directory.CreateDirectory(buildpackDepsDir);
-            var profiled = Path.Combine(buildPath, ".profile.d");
+            var profiled = buildPath / ".profile.d";
             Directory.CreateDirectory(profiled);
             
             if (isPreStartOverriden) 
             {
                 // copy buildpack to deps dir so we can invoke it as part of startup
-                foreach(var file in Directory.EnumerateFiles(Path.GetDirectoryName(GetType().Assembly.Location)))
+                var assemblyFolder = Path.GetDirectoryName(GetType().Assembly.Location)!;
+                foreach(var file in Directory.EnumerateFiles(assemblyFolder))
                 {
                     File.Copy(file, Path.Combine(buildpackDepsDir, Path.GetFileName(file)), true);
                 }
@@ -86,11 +77,6 @@ namespace KerberosBuildpack
                 // write startup shell script to call buildpack prestart lifecycle event in deps dir
                 var startupScriptName = $"{index:00}_{nameof(KerberosBuildpack)}_startup.sh";
                 var startupScript = $"#!/bin/bash\n$DEPS_DIR/{index}/{prestartCommand} {index}\n";
-                var sidecarOverriden =  GetType().GetMethod(nameof(Sidecar), BindingFlags.Instance | BindingFlags.Public, null, new[] {typeof(string),typeof(string),typeof(int) }, null  )?.DeclaringType != typeof(BuildpackBase);
-                if (sidecarOverriden)
-                {
-                    startupScript += $"$DEPS_DIR/{index}/{GetType().Assembly.GetName().Name} Sidecar {index} &\n";
-                }
                 File.WriteAllText(Path.Combine(profiled,startupScriptName), startupScript);
                 InstallStartupEnvVars(profiled, index, false);
                 GetEnvScriptFile(profiled, index, true); // causes empty env file to be created so it can (potentially) be populated with vars during onstart hook
@@ -98,7 +84,7 @@ namespace KerberosBuildpack
             
         }
 
-        private string GetEnvScriptFile(string profiled, int index, bool isPreStart)
+        private string GetEnvScriptFile(AbsolutePath profiled, int index, bool isPreStart)
         {
             var prefix = isPreStart ? "z" : string.Empty;
             var suffix = IsLinux ? ".sh" : ".bat";
@@ -108,7 +94,7 @@ namespace KerberosBuildpack
                 File.WriteAllText(envScriptName, string.Empty);
             return envScriptName;
         }
-        protected void InstallStartupEnvVars(string profiled, int index, bool isPreStart)
+        protected void InstallStartupEnvVars(AbsolutePath profiled, int index, bool isPreStart)
         {
             var envScriptName = GetEnvScriptFile(profiled, index, isPreStart);
             

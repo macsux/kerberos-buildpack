@@ -43,18 +43,29 @@ namespace KerberosDemo
             // var domain = serviceAccount.Split("@").Last();
             // var ldapAddress = kdcStr != null ? kdcStr.Split(";").First() : domain;
             services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
+<<<<<<< HEAD
                 .AddNegotiate();
                 // .AddNegotiate(c => c
                 //     .EnableLdap(ldap =>
                 //     {
-                        ldap.LdapConnection = new LdapConnection(new LdapDirectoryIdentifier(ldapAddress, true, false), new NetworkCredential(serviceAccount, password), AuthType.Basic);
+                //         ldap.LdapConnection = new LdapConnection(new LdapDirectoryIdentifier(ldapAddress, true, false), new NetworkCredential(serviceAccount, password), AuthType.Basic);
                 //         ldap.Domain = domain;
                 //         ldap.LdapConnection.SessionOptions.ReferralChasing = ReferralChasingOptions.None;
                 //         ldap.LdapConnection.SessionOptions.ProtocolVersion = 3; //Setting LDAP Protocol to latest version
-                        ldap.LdapConnection.Timeout = TimeSpan.FromMinutes(1);
                 //         ldap.LdapConnection.AutoBind = true;
-                        // ldap.LdapConnection.Bind();
                 //     }));
+=======
+                .AddNegotiate(c => c
+                    .EnableLdap(ldap =>
+                    {
+                        ldap.LdapConnection = new LdapConnection(new LdapDirectoryIdentifier(ldapAddress, true, true), new NetworkCredential(serviceAccount, password), AuthType.Basic);
+                        ldap.Domain = domain;
+                        ldap.LdapConnection.SessionOptions.ProtocolVersion = 3; //Setting LDAP Protocol to latest version
+                        ldap.LdapConnection.Timeout = TimeSpan.FromMinutes(1);
+                        ldap.LdapConnection.AutoBind = true;
+                        // ldap.LdapConnection.Bind();
+                    }));
+>>>>>>> 88b0085 (WIP)
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {

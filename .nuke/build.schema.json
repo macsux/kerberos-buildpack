@@ -76,7 +76,6 @@
             "type": "string",
             "enum": [
               "Clean",
-              "Compile",
               "Detect",
               "Publish",
               "Release",
@@ -88,14 +87,6 @@
           "type": "string",
           "description": "Path to a solution file that is automatically loaded"
         },
-        "Stack": {
-          "type": "string",
-          "description": "Target CF stack type - 'windows' or 'linux'. Determines buildpack runtime (Framework or Core). Default is both",
-          "enum": [
-            "Linux",
-            "Windows"
-          ]
-        },
         "Target": {
           "type": "array",
           "description": "List of targets to be invoked. Default is '{default_target}'",
@@ -103,7 +94,6 @@
             "type": "string",
             "enum": [
               "Clean",
-              "Compile",
               "Detect",
               "Publish",
               "Release",

@@ -18,10 +18,14 @@ using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Tools.NerdbankGitVersioning;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
+using LibGit2Sharp;
+using Nuke.Common.Utilities;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using FileMode = System.IO.FileMode;
 using ZipFile = System.IO.Compression.ZipFile;
+using Credentials = Octokit.Credentials;
+using Project = Octokit.Project;
 
 [assembly: InternalsVisibleTo("KerberosBuildpackTests")]
 [CheckBuildProjectConfigurations]
@@ -42,14 +46,11 @@ class Build : NukeBuild
     }
     public static int Main () => Execute<Build>(x => x.Publish);
     const string BuildpackProjectName = "KerberosBuildpack";
-    string GetPackageZipName(string runtime) => $"{BuildpackProjectName}-{runtime}-{GitVersion.NuGetPackageVersion}.zip";
-
-    
+    [GitRepositoryExt] LibGit2Sharp.Repository GitRepository;
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly string Configuration = "Debug";
-    
-    [Parameter("Target CF stack type - 'windows' or 'linux'. Determines buildpack runtime (Framework or Core). Default is both")]
-    readonly StackType Stack = StackType.Linux;
+    readonly string Runtime = "linux-x64";
+    readonly string Framework = "net6.0";
     
     [Parameter("GitHub personal access token with access to the repo")]
     string GitHubToken;
@@ -57,21 +58,18 @@ class Build : NukeBuild
     [Parameter("Application directory against which buildpack will be applied")]
     readonly string ApplicationDirectory;
     
-
-    IEnumerable<PublishTarget> PublishCombinations
-    {
-        get
-        {
-            if (Stack.HasFlag(StackType.Windows))
-                yield return new PublishTarget {Framework = "net472", Runtime = "win-x64"};
-            if (Stack.HasFlag(StackType.Linux))
-                yield return new PublishTarget {Framework = "net6.0", Runtime = "linux-x64"};
-        }
-    }
-
     [Solution] readonly Solution Solution;
-    [GitRepository] readonly GitRepository GitRepository;
+    string PackageZipName => $"{BuildpackProjectName}-{Runtime}-{ReleaseName}.zip";
     [NerdbankGitVersioning(UpdateBuildNumber = true)] readonly NerdbankGitVersioning GitVersion;
+    public string ReleaseName => IsCurrentBranchCommitted() ? $"v{GitVersion.NuGetPackageVersion}" : "WIP";
+    
+    public AbsolutePath GetPublishDirectory(Nuke.Common.ProjectModel.Project project) => project.Directory / "bin" / Configuration / Framework / Runtime / "publish";
+    public bool IsGitHubRepository 
+        => GitRepository.Network.Remotes
+            .Where(x => x.Name == "origin")
+            .Select(x => x.Url.Contains("github.com"))
+            .FirstOrDefault();
+    bool IsCurrentBranchCommitted() => !GitRepository.RetrieveStatus().IsDirty;
 
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
@@ -88,72 +86,68 @@ class Build : NukeBuild
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
         });
 
-    Target Compile => _ => _
-        .Description("Compiles the buildpack")
-        .DependsOn(Clean)
-        .Executes(() =>
-        {
-            
-            Logger.Info(Stack);
-            DotNetBuild(s => s
-                .SetProjectFile(Solution)
-                .SetConfiguration(Configuration)
-                
-                .SetAssemblyVersion(Nuke.Common.Tools.GitVersion.GitVersion.AssemblySemVer)
-                .SetFileVersion(Nuke.Common.Tools.GitVersion.GitVersion.AssemblySemFileVer)
-                .SetInformationalVersion(Nuke.Common.Tools.GitVersion.GitVersion.InformationalVersion)
-                .CombineWith(PublishCombinations, (c, p) => c
-                    .SetFramework(p.Framework)
-                    .SetRuntime(p.Runtime)));
-        });
+    // Target Compile => _ => _
+    //     .Description("Compiles the buildpack")
+    //     .Executes(() =>
+    //     {
+    //         Logger.Info(Stack);
+    //         DotNetBuild(s => s
+    //             .SetProjectFile(Solution)
+    //             .SetConfiguration(Configuration)
+    //             .SetAssemblyVersion(GitVersion.AssemblyVersion)
+    //             .SetFileVersion(GitVersion.AssemblyFileVersion)
+    //             .SetInformationalVersion(GitVersion.AssemblyInformationalVersion)
+    //             .CombineWith(PublishCombinations, (c, p) => c
+    //                 .SetFramework(p.Framework)
+    //                 .SetRuntime(p.Runtime)));
+    //     });
     
     Target Publish => _ => _
         .Description("Packages buildpack in Cloud Foundry expected format into /artifacts directory")
-        .DependsOn(Clean)
+        .After(Clean)
         .Executes(() =>
         {
-            foreach (var publishCombination in PublishCombinations)
+            var workDirectory = TemporaryDirectory / "pack";
+            EnsureCleanDirectory(TemporaryDirectory);
+            var buildpackProject = Solution.GetProject(BuildpackProjectName) ?? throw new Exception($"Unable to find project called {BuildpackProjectName} in solution {Solution.Name}");
+            var sidecarProject = Solution.GetProject("KerberosSidecar") ?? throw new Exception($"Unable to find project called KerberosSidecar in solution {Solution.Name}");
+            var buildpackPublishDirectory = GetPublishDirectory(buildpackProject);
+            var sidecarPublishDirectory = GetPublishDirectory(sidecarProject);
+            var workBinDirectory = workDirectory / "bin";
+            var workDeps = workDirectory / "deps";
+
+
+            DotNetPublish(s => s
+                .SetProject(Solution)
+                .SetConfiguration(Configuration)
+                .SetFramework(Framework)
+                .SetRuntime(Runtime)
+                .EnableSelfContained()
+                .SetAssemblyVersion(GitVersion.AssemblyVersion)
+                .SetFileVersion(GitVersion.AssemblyFileVersion)
+                .SetInformationalVersion(GitVersion.AssemblyInformationalVersion)
+            );
+
+            var lifecycleBinaries = Solution.GetProjects("Lifecycle*")
+                .Select(x => x.Directory / "bin" / Configuration / Framework / Runtime / "publish")
+                .SelectMany(x => Directory.GetFiles(x).Where(path => LifecycleHooks.Any(hook => Path.GetFileName(path).StartsWith(hook))));
+
+            foreach (var lifecycleBinary in lifecycleBinaries)
             {
-                var framework = publishCombination.Framework;
-                var runtime = publishCombination.Runtime;
-                var packageZipName = GetPackageZipName(runtime);
-                var workDirectory = TemporaryDirectory / "pack";
-                EnsureCleanDirectory(TemporaryDirectory);
-                var buildpackProject = Solution.GetProject(BuildpackProjectName);
-                if(buildpackProject == null)
-                    throw new Exception($"Unable to find project called {BuildpackProjectName} in solution {Solution.Name}");
-                var publishDirectory = buildpackProject.Directory / "bin" / Configuration / framework / runtime / "publish";
-                var workBinDirectory = workDirectory / "bin";
-
-
-                DotNetPublish(s => s
-                    .SetProject(Solution)
-                    .SetConfiguration(Configuration)
-                    .SetFramework(framework)
-                    .SetRuntime(runtime)
-                    .EnableSelfContained()
-                    .SetAssemblyVersion(Nuke.Common.Tools.GitVersion.GitVersion.AssemblySemVer)
-                    .SetFileVersion(Nuke.Common.Tools.GitVersion.GitVersion.AssemblySemFileVer)
-                    .SetInformationalVersion(Nuke.Common.Tools.GitVersion.GitVersion.InformationalVersion)
-                );
-
-                var lifecycleBinaries = Solution.GetProjects("Lifecycle*")
-                    .Select(x => x.Directory / "bin" / Configuration / framework / runtime / "publish")
-                    .SelectMany(x => Directory.GetFiles(x).Where(path => LifecycleHooks.Any(hook => Path.GetFileName(path).StartsWith(hook))));
-
-                foreach (var lifecycleBinary in lifecycleBinaries)
-                {
-                    CopyFileToDirectory(lifecycleBinary, workBinDirectory, FileExistsPolicy.OverwriteIfNewer);
-                }
-
-                CopyDirectoryRecursively(publishDirectory, workBinDirectory, DirectoryExistsPolicy.Merge);
-                var tempZipFile = TemporaryDirectory / packageZipName;
-
-                ZipFile.CreateFromDirectory(workDirectory, tempZipFile, CompressionLevel.NoCompression, false);
-                MakeFilesInZipUnixExecutable(tempZipFile);
-                CopyFileToDirectory(tempZipFile, ArtifactsDirectory, FileExistsPolicy.Overwrite);
-                Logger.Block(ArtifactsDirectory / packageZipName);
+                CopyFileToDirectory(lifecycleBinary, workBinDirectory, FileExistsPolicy.OverwriteIfNewer);
             }
+
+            CopyDirectoryRecursively(buildpackPublishDirectory, workBinDirectory, DirectoryExistsPolicy.Merge);
+            
+            CopyDirectoryRecursively(sidecarPublishDirectory, workDeps / "sidecar" , DirectoryExistsPolicy.Merge);
+
+            
+            var tempZipFile = TemporaryDirectory / PackageZipName;
+
+            ZipFile.CreateFromDirectory(workDirectory, tempZipFile, CompressionLevel.NoCompression, false);
+            MakeFilesInZipUnixExecutable(tempZipFile);
+            CopyFileToDirectory(tempZipFile, ArtifactsDirectory, FileExistsPolicy.Overwrite);
+            Logger.Block(ArtifactsDirectory / PackageZipName);
         });
     
     
@@ -161,53 +155,47 @@ class Build : NukeBuild
         .Description("Creates a GitHub release (or amends existing) and uploads buildpack artifact")
         .DependsOn(Publish)
         .Requires(() => GitHubToken)
+        .Requires(() => IsGitHubRepository)
         .Executes(async () =>
         {
-            foreach (var publishCombination in PublishCombinations)
+            var client = new GitHubClient(new ProductHeaderValue(BuildpackProjectName))
             {
-                var runtime = publishCombination.Runtime;
-                var packageZipName = GetPackageZipName(runtime);
-                if (!GitRepository.IsGitHubRepository())
-                    throw new Exception("Only supported when git repo remote is github");
-    
-                var client = new GitHubClient(new ProductHeaderValue(BuildpackProjectName))
-                {
-                    Credentials = new Credentials(GitHubToken, AuthenticationType.Bearer)
-                };
-                var gitIdParts = GitRepository.Identifier.Split("/");
-                var owner = gitIdParts[0];
-                var repoName = gitIdParts[1];
-    
-                var releaseName = $"v{Nuke.Common.Tools.GitVersion.GitVersion.MajorMinorPatch}";
-                Release release;
-                try
-                {
-                    release = await client.Repository.Release.Get(owner, repoName, releaseName);
-                }
-                catch (NotFoundException)
-                {
-                    var newRelease = new NewRelease(releaseName)
-                    {
-                        Name = releaseName,
-                        Draft = false,
-                        Prerelease = false
-                    };
-                    release = await client.Repository.Release.Create(owner, repoName, newRelease);
-                }
-    
-                var existingAsset = release.Assets.FirstOrDefault(x => x.Name == packageZipName);
-                if (existingAsset != null)
-                {
-                    await client.Repository.Release.DeleteAsset(owner, repoName, existingAsset.Id);
-                }
-    
-                var zipPackageLocation = ArtifactsDirectory / packageZipName;
-                var stream = File.OpenRead(zipPackageLocation);
-                var releaseAssetUpload = new ReleaseAssetUpload(packageZipName, "application/zip", stream, TimeSpan.FromHours(1));
-                var releaseAsset = await client.Repository.Release.UploadAsset(release, releaseAssetUpload);
-    
-                Logger.Block(releaseAsset.BrowserDownloadUrl);
+                Credentials = new Credentials(GitHubToken, AuthenticationType.Bearer)
+            };
+            var pushUrl = new Uri(GitRepository.Network.Remotes.Where(x => x.Name == "origin").Select(x => x.Url.TrimEnd(".git")).First());
+            
+            var owner = pushUrl.Segments[1].Trim('/');
+            var repoName = pushUrl.Segments[2].Trim('/');
+
+            
+            Release release;
+            try
+            {
+                release = await client.Repository.Release.Get(owner, repoName, ReleaseName);
             }
+            catch (Octokit.NotFoundException)
+            {
+                var newRelease = new NewRelease(ReleaseName)
+                {
+                    Name = ReleaseName,
+                    Draft = false,
+                    Prerelease = false
+                };
+                release = await client.Repository.Release.Create(owner, repoName, newRelease);
+            }
+
+            var existingAsset = release.Assets.FirstOrDefault(x => x.Name == PackageZipName);
+            if (existingAsset != null)
+            {
+                await client.Repository.Release.DeleteAsset(owner, repoName, existingAsset.Id);
+            }
+
+            var zipPackageLocation = ArtifactsDirectory / PackageZipName;
+            var stream = File.OpenRead(zipPackageLocation);
+            var releaseAssetUpload = new ReleaseAssetUpload(PackageZipName, "application/zip", stream, TimeSpan.FromHours(1));
+            var releaseAsset = await client.Repository.Release.UploadAsset(release, releaseAssetUpload);
+
+            Logger.Block(releaseAsset.BrowserDownloadUrl);
         });
 
     Target Detect => _ => _

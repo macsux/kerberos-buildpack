@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OutputType>exe</OutputType>
+<!--    <PublishTrimmed>true</PublishTrimmed>-->
+<!--    <TrimmerDefaultAction>link</TrimmerDefaultAction>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Kerberos.NET" Version="4.5.124" />
+    <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="NetEscapades.Configuration.Yaml" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="appsettings.Development.yaml" CopyToPublishDirectory="Never"/>
+  </ItemGroup>
+ 
+</Project>

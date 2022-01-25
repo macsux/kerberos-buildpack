@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <RuntimeIdentifiers>linux-x64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
     <RootNamespace>KerberosBuildpack</RootNamespace>
     <AssemblyName>buildpack</AssemblyName>
     <OutputType>Exe</OutputType>
@@ -11,15 +11,21 @@
   <ItemGroup>
     <PackageReference Include="CommandDotNet" Version="3.0.2" />
     <PackageReference Include="Kerberos.NET" Version="4.5.124" />
+    <PackageReference Include="NMica.Utils" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\KerberosCommon\KerberosCommon.csproj" />
-    <ProjectReference Include="..\KerberosTicketRefresher\KerberosTicketRefresher.csproj" />
+    <ProjectReference Include="..\KerberosSidecar\KerberosSidecar.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="launch.yaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="startsidecar.sh">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
     
 </Project>
