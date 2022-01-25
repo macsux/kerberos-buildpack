@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.EnterpriseServices;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
@@ -13,13 +14,24 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
+
+[assembly: ApplicationName("CcgPlugin")]
+[assembly: ApplicationActivation(ActivationOption.Server)]
+[assembly: ApplicationID("9CBD827C-66B3-493B-8962-445F027970C8")]
+[assembly: ApplicationAccessControl(
+    AccessChecksLevel = AccessChecksLevelOption.Application, 
+    Authentication = AuthenticationOption.None,
+    Value = false)]
+
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 
 // COM, set the ComVisible attribute to true on that type.
-[assembly: ComVisible(true)]
+// [assembly: ComVisible(true)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("8A8F0F10-04A9-4726-9592-22ED3797761C")]
+// [assembly: Guid("8A8F0F10-04A9-4726-9592-22ED3797761C")]
+[assembly: Guid("34DC0E7C-37C1-41C1-B3FD-1755A0396308")]
+//34DC0E7C-37C1-41C1-B3FD-1755A0396308
 
 // Version information for an assembly consists of the following four values:
 //

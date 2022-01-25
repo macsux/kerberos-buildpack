@@ -1,4 +1,5 @@
 ﻿using System;
+using System.EnterpriseServices;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -11,7 +12,7 @@ namespace CcgPlugin
     [ComImport]
     public interface ICcgDomainAuthCredentials
     {
-        [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
+        // [MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)]
         void GetPasswordCredentials(
             [MarshalAs(UnmanagedType.LPWStr), In] string pluginInput,
             [MarshalAs(UnmanagedType.LPWStr)] out string domainName,
@@ -21,9 +22,9 @@ namespace CcgPlugin
     
     // [Guid("defff03c-3245-465f-8391-cc586a2d1f31")]
     [Guid("defff03c-3245-465f-8391-cc586a2d1f32")]
-    [ClassInterface(ClassInterfaceType.None)]
+    // [ClassInterface(ClassInterfaceType.None)]
     [ProgId("CcgCredProvider")]
-    public class CcgCredProvider : ICcgDomainAuthCredentials
+    public class CcgCredProvider : ServicedComponent, ICcgDomainAuthCredentials
     {
         public CcgCredProvider()
         {
