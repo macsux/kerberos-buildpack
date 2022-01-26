@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -107,6 +110,30 @@ namespace KerberosDemo.Controllers
             
             return sb.ToString();
         }
+
+        [HttpGet("/testkdc")]
+        public async Task<string> TestKDC(string kdc)
+        {
+            
+            if (string.IsNullOrEmpty(kdc))
+            {
+                kdc = Environment.GetEnvironmentVariable("KRB5_KDC");
+                if (string.IsNullOrEmpty(kdc))
+                    return "KRB5_KDC env var is not configured";
+            }
+            using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            try
+            {
+                await socket.ConnectAsync(kdc, 88);
+                return $"Successfully connected to {kdc} on port 88";
+            }
+            catch (Exception e)
+            {
+                return $"Failed connection test to {kdc} on port 88\n{e}";
+            }
+        }
+        
+        
     }
 
     public class SqlServerInfo

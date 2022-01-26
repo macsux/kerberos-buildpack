@@ -47,11 +47,11 @@ namespace KerberosDemo
                 // .AddNegotiate(c => c
                 //     .EnableLdap(ldap =>
                 //     {
-                        ldap.LdapConnection = new LdapConnection(new LdapDirectoryIdentifier(ldapAddress, true, false), new NetworkCredential(serviceAccount, password), AuthType.Basic);
+                        // ldap.LdapConnection = new LdapConnection(new LdapDirectoryIdentifier(ldapAddress, true, false), new NetworkCredential(serviceAccount, password), AuthType.Basic);
                 //         ldap.Domain = domain;
                 //         ldap.LdapConnection.SessionOptions.ReferralChasing = ReferralChasingOptions.None;
                 //         ldap.LdapConnection.SessionOptions.ProtocolVersion = 3; //Setting LDAP Protocol to latest version
-                        ldap.LdapConnection.Timeout = TimeSpan.FromMinutes(1);
+                        // ldap.LdapConnection.Timeout = TimeSpan.FromMinutes(1);
                 //         ldap.LdapConnection.AutoBind = true;
                         // ldap.LdapConnection.Bind();
                 //     }));

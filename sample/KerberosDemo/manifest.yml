@@ -2,7 +2,7 @@
 applications:
 - name: KerberosDemo
   path: bin/Debug/net5.0/linux-x64/publish
-  memory: 256M
+  memory: 512M
   health-check-type: none
   buildpacks: 
     - https://github.com/macsux/kerberos-buildpack/releases/download/WIP/KerberosBuildpack-linux-x64-WIP.zip
