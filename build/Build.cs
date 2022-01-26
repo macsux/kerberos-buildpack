@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
 using NuGet.Configuration;
 using Nuke.Common;
@@ -60,6 +61,7 @@ class Build : NukeBuild
     
     [Solution] readonly Solution Solution;
     string PackageZipName => $"{BuildpackProjectName}-{Runtime}-{ReleaseName}.zip";
+    string SampleZipName => $"sampleapp-{Runtime}-{ReleaseName}.zip";
     [NerdbankGitVersioning(UpdateBuildNumber = true)] readonly NerdbankGitVersioning GitVersion;
     public string ReleaseName => IsCurrentBranchCommitted() ? $"v{GitVersion.NuGetPackageVersion}" : "WIP";
     
@@ -85,26 +87,11 @@ class Build : NukeBuild
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
         });
-
-    // Target Compile => _ => _
-    //     .Description("Compiles the buildpack")
-    //     .Executes(() =>
-    //     {
-    //         Logger.Info(Stack);
-    //         DotNetBuild(s => s
-    //             .SetProjectFile(Solution)
-    //             .SetConfiguration(Configuration)
-    //             .SetAssemblyVersion(GitVersion.AssemblyVersion)
-    //             .SetFileVersion(GitVersion.AssemblyFileVersion)
-    //             .SetInformationalVersion(GitVersion.AssemblyInformationalVersion)
-    //             .CombineWith(PublishCombinations, (c, p) => c
-    //                 .SetFramework(p.Framework)
-    //                 .SetRuntime(p.Runtime)));
-    //     });
     
     Target Publish => _ => _
         .Description("Packages buildpack in Cloud Foundry expected format into /artifacts directory")
         .After(Clean)
+        .DependsOn(PublishSample)
         .Executes(() =>
         {
             var workDirectory = TemporaryDirectory / "pack";
@@ -127,7 +114,7 @@ class Build : NukeBuild
                 .SetFileVersion(GitVersion.AssemblyFileVersion)
                 .SetInformationalVersion(GitVersion.AssemblyInformationalVersion)
             );
-
+            
             var lifecycleBinaries = Solution.GetProjects("Lifecycle*")
                 .Select(x => x.Directory / "bin" / Configuration / Framework / Runtime / "publish")
                 .SelectMany(x => Directory.GetFiles(x).Where(path => LifecycleHooks.Any(hook => Path.GetFileName(path).StartsWith(hook))));
@@ -149,7 +136,19 @@ class Build : NukeBuild
             CopyFileToDirectory(tempZipFile, ArtifactsDirectory, FileExistsPolicy.Overwrite);
             Logger.Block(ArtifactsDirectory / PackageZipName);
         });
-    
+
+    Target PublishSample => _ => _
+        .Executes(() =>
+        {
+            var demoProjectDirectory = RootDirectory / "sample" / "KerberosDemo";
+            DotNetPublish(c => c
+                .SetProject(demoProjectDirectory / "KerberosDemo.csproj")
+                .SetConfiguration("DEBUG"));
+            var publishFolder = demoProjectDirectory / "bin" / "Debug" / "net5.0" / "publish";
+            var artifactZip = ArtifactsDirectory / $"sampleapp-{Runtime}-{ReleaseName}.zip";
+            DeleteFile(artifactZip);
+            ZipFile.CreateFromDirectory(publishFolder, artifactZip, CompressionLevel.NoCompression, false);
+        });
     
     Target Release => _ => _
         .Description("Creates a GitHub release (or amends existing) and uploads buildpack artifact")
@@ -184,20 +183,24 @@ class Build : NukeBuild
                 release = await client.Repository.Release.Create(owner, repoName, newRelease);
             }
 
-            var existingAsset = release.Assets.FirstOrDefault(x => x.Name == PackageZipName);
-            if (existingAsset != null)
+            var artifactsToRelease = new[] { PackageZipName, SampleZipName }.ToHashSet();
+
+            foreach (var existingAsset in release.Assets.Where(x => artifactsToRelease.Contains(x.Name)))
             {
                 await client.Repository.Release.DeleteAsset(owner, repoName, existingAsset.Id);
             }
 
-            var zipPackageLocation = ArtifactsDirectory / PackageZipName;
-            var stream = File.OpenRead(zipPackageLocation);
-            var releaseAssetUpload = new ReleaseAssetUpload(PackageZipName, "application/zip", stream, TimeSpan.FromHours(1));
-            var releaseAsset = await client.Repository.Release.UploadAsset(release, releaseAssetUpload);
+            foreach (var artifact in artifactsToRelease)
+            {
+                var zipPackageLocation = ArtifactsDirectory / artifact;
+                var stream = File.OpenRead(zipPackageLocation);
+                var releaseAssetUpload = new ReleaseAssetUpload(PackageZipName, "application/zip", stream, TimeSpan.FromHours(1));
+                var releaseAsset = await client.Repository.Release.UploadAsset(release, releaseAssetUpload);
 
-            Logger.Block(releaseAsset.BrowserDownloadUrl);
+                Logger.Block(releaseAsset.BrowserDownloadUrl);
+            }
         });
-
+    
     Target Detect => _ => _
         .Description("Invokes buildpack 'detect' lifecycle event")
         .Requires(() => ApplicationDirectory)
