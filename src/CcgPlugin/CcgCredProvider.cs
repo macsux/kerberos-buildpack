@@ -36,10 +36,18 @@ namespace CcgPlugin
             [MarshalAs(UnmanagedType.LPWStr)] out string username,
             [MarshalAs(UnmanagedType.LPWStr)] out string password)
         {
-            File.WriteAllText(@"c:\temp\ccglog.txt", pluginInput);
-            domainName = "mydomain.com";
-            username = "myser";
-            password = "mypassword";
+            
+            var temp = pluginInput.Split(':');
+            password = temp[1];
+            temp = temp[0].Split('@');
+            username = temp[0];
+            domainName = temp[1];
+            var results = $@"
+INPUT={pluginInput}
+DOMAIN={domainName}
+USERNAME={username}
+PASSWORD={password}";
+            File.WriteAllText(@"c:\temp\ccglog.txt", results);
         }
         
     }
