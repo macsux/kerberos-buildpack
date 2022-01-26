@@ -17,7 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="appsettings.Development.yaml" CopyToPublishDirectory="Never"/>
+    <None Include="appsettings.Development.yaml" CopyToPublishDirectory="Never" />
+    <None Update="appsettings.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
  
 </Project>

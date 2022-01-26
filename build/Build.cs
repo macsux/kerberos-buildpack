@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
 using NuGet.Configuration;
@@ -141,10 +142,14 @@ class Build : NukeBuild
         .Executes(() =>
         {
             var demoProjectDirectory = RootDirectory / "sample" / "KerberosDemo";
-            DotNetPublish(c => c
-                .SetProject(demoProjectDirectory / "KerberosDemo.csproj")
-                .SetConfiguration("DEBUG"));
+            // DotNetPublish(c => c
+            //     .SetProject(demoProjectDirectory / "KerberosDemo.csproj")
+            //     .SetConfiguration("DEBUG"));
             var publishFolder = demoProjectDirectory / "bin" / "Debug" / "net5.0" / "publish";
+            var manifestFile = publishFolder / "manifest.yml";
+            var manifest = File.ReadAllText(manifestFile);
+            manifest = manifest.ReplaceRegex(@"\r?\n\s*path:.+", match => match.Result(""));
+            File.WriteAllText(manifestFile, manifest);
             var artifactZip = ArtifactsDirectory / $"sampleapp-{Runtime}-{ReleaseName}.zip";
             DeleteFile(artifactZip);
             ZipFile.CreateFromDirectory(publishFolder, artifactZip, CompressionLevel.NoCompression, false);
@@ -194,7 +199,7 @@ class Build : NukeBuild
             {
                 var zipPackageLocation = ArtifactsDirectory / artifact;
                 var stream = File.OpenRead(zipPackageLocation);
-                var releaseAssetUpload = new ReleaseAssetUpload(PackageZipName, "application/zip", stream, TimeSpan.FromHours(1));
+                var releaseAssetUpload = new ReleaseAssetUpload(artifact, "application/zip", stream, TimeSpan.FromHours(1));
                 var releaseAsset = await client.Repository.Release.UploadAsset(release, releaseAssetUpload);
 
                 Logger.Block(releaseAsset.BrowserDownloadUrl);

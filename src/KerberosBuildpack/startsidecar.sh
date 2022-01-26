@@ -1,6 +1,7 @@
 ﻿#!/bin/bash
 #set -ux
 #set +e
+cd $DEPS_DIR/0/sidecar/
 $DEPS_DIR/0/sidecar/KerberosSidecar --urls=http://0.0.0.0:9090 &
 
 #

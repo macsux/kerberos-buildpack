@@ -110,4 +110,5 @@ app.UseEndpoints(endpoints =>
 {
     endpoints.MapHealthChecks("/health/ready", new HealthCheckOptions().WithJsonDetails());
 });
+app.Logger.LogInformation("Kerberos sidecar started....");
 await app.RunAsync();
