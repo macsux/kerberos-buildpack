@@ -25,10 +25,11 @@ applications:
     - dotnet_core_buildpack
   env:
     KRB5_KDC: ad.almirex.com
-    KRB_SERVICE_ACCOUNT: iwaclient@almirex.dc
+    KRB_SERVICE_ACCOUNT: iwaclient@almirex.dc # MUST BE in format sAMAccountName@KerberosRealm
     KRB_PASSWORD: P@ssw0rd
 
 ```
+
 
 ** Adjust URL of the Kerberos buildpack to latest version. You can get the full zip URL from [Releases](https://github.com/macsux/kerberos-buildpack/releases) page.
 

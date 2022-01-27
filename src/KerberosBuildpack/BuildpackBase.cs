@@ -78,9 +78,9 @@ namespace KerberosBuildpack
                 var startupScriptName = $"{index:00}_{nameof(KerberosBuildpack)}_startup.sh";
                 var startupScript = $"#!/bin/bash\n$DEPS_DIR/{index}/{prestartCommand} {index}\n";
                 File.WriteAllText(Path.Combine(profiled,startupScriptName), startupScript);
-                InstallStartupEnvVars(profiled, index, false);
-                GetEnvScriptFile(profiled, index, true); // causes empty env file to be created so it can (potentially) be populated with vars during onstart hook
             }
+            InstallStartupEnvVars(profiled, index, false);
+            GetEnvScriptFile(profiled, index, true); // causes empty env file to be created so it can (potentially) be populated with vars during onstart hook
             
         }
 

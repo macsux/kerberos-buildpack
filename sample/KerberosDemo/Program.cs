@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Steeltoe.Bootstrap.Autoconfig;
 
 namespace KerberosDemo
 {
@@ -21,6 +22,7 @@ namespace KerberosDemo
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
-                });
+                })
+                .AddSteeltoe();
     }
 }

@@ -80,6 +80,7 @@
               "Publish",
               "PublishSample",
               "Release",
+              "Restore",
               "Supply"
             ]
           }
@@ -99,6 +100,7 @@
               "Publish",
               "PublishSample",
               "Release",
+              "Restore",
               "Supply"
             ]
           }

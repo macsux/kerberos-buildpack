@@ -92,7 +92,7 @@ class Build : NukeBuild
     Target Publish => _ => _
         .Description("Packages buildpack in Cloud Foundry expected format into /artifacts directory")
         .After(Clean)
-        .DependsOn(PublishSample)
+        .DependsOn(PublishSample, Restore)
         .Executes(() =>
         {
             var workDirectory = TemporaryDirectory / "pack";
@@ -111,6 +111,7 @@ class Build : NukeBuild
                 .SetFramework(Framework)
                 .SetRuntime(Runtime)
                 .EnableSelfContained()
+                .EnableNoRestore()
                 .SetAssemblyVersion(GitVersion.AssemblyVersion)
                 .SetFileVersion(GitVersion.AssemblyFileVersion)
                 .SetInformationalVersion(GitVersion.AssemblyInformationalVersion)
@@ -138,13 +139,25 @@ class Build : NukeBuild
             Logger.Block(ArtifactsDirectory / PackageZipName);
         });
 
+    Target Restore => _ => _
+        .Executes(() =>
+        {
+            DotNetRestore(c => c
+                .SetProjectFile(Solution));
+            
+            DotNetPublish(c => c
+                .SetProject(RootDirectory / "sample" / "Samples.sln"));
+        });
+
     Target PublishSample => _ => _
+        .DependsOn(Restore)
         .Executes(() =>
         {
             var demoProjectDirectory = RootDirectory / "sample" / "KerberosDemo";
-            // DotNetPublish(c => c
-            //     .SetProject(demoProjectDirectory / "KerberosDemo.csproj")
-            //     .SetConfiguration("DEBUG"));
+            DotNetPublish(c => c
+                .SetProject(demoProjectDirectory / "KerberosDemo.csproj")
+                .EnableNoRestore()
+                .SetConfiguration("DEBUG"));
             var publishFolder = demoProjectDirectory / "bin" / "Debug" / "net5.0" / "publish";
             var manifestFile = publishFolder / "manifest.yml";
             var manifest = File.ReadAllText(manifestFile);
