@@ -27,9 +27,9 @@ namespace KerberosBuildpack
             var myDependenciesDirectory = depsPath / index.ToString(); // store any runtime dependencies not belonging to the app in this directory
             var krb5Dir = buildPath / ".krb5";
             
-            EnvironmentalVariables["KRB5_CONFIG"] = krb5Dir / "krb5.conf";
-            EnvironmentalVariables["KRB5CCNAME"] = krb5Dir / "krb5cc";
-            EnvironmentalVariables["KRB5_KTNAME"] = krb5Dir / "service.keytab";
+            EnvironmentalVariables["KRB5_CONFIG"] = "/home/vcap/app/.krb5/krb5.conf";
+            EnvironmentalVariables["KRB5CCNAME"] = "/home/vcap/app/.krb5/krb5cc";
+            EnvironmentalVariables["KRB5_KTNAME"] = "/home/vcap/app/.krb5/service.keytab";
             
             Directory.CreateDirectory(krb5Dir);
 

@@ -25,8 +25,9 @@ services.AddOptions<KerberosOptions>()
     .Configure(c =>
     {
         var config = webHostBuilder.Configuration;
-        c.CacheFile = config.GetValue<string>("KRB5CCNAME");
         c.Kerb5ConfigFile = config.GetValue<string>("KRB5_CONFIG");
+        c.CacheFile = config.GetValue<string>("KRB5CCNAME");
+        c.KeytabFile = config.GetValue<string>("KRB5_KTNAME");
         c.ServiceAccount = config.GetValue<string>("KRB_SERVICE_ACCOUNT");
         c.Password = config.GetValue<string>("KRB_PASSWORD");
         c.Kdc = config.GetValue<string>("KRB_KDC");
@@ -34,6 +35,7 @@ services.AddOptions<KerberosOptions>()
     })
     .PostConfigure<ILoggerFactory>((options, loggerFactory) =>
     {
+        var log = loggerFactory.CreateLogger<Program>();
         var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var userKerbDir = Path.Combine(homeDir, ".krb5");
 

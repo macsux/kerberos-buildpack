@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Net;
-using System.Net.NetworkInformation;
+using File = System.IO.File;
 using System.Net.Sockets;
 using System.Security.Claims;
 using System.Text;
@@ -132,8 +133,73 @@ namespace KerberosDemo.Controllers
                 return $"Failed connection test to {kdc} on port 88\n{e}";
             }
         }
-        
-        
+
+        [HttpGet("/diag")]
+        public string Diagnostics()
+        {
+            var sb = new StringBuilder();
+            VerifyEnvVar("KRB5_CONFIG");
+            VerifyEnvVar("KRB5CCNAME");
+            VerifyEnvVar("KRB5_KTNAME");
+            
+            var krb5Conf =  Environment.GetEnvironmentVariable("KRB5_CONFIG");
+            if (!string.IsNullOrEmpty(krb5Conf))
+            {
+                sb.AppendLine($"[{krb5Conf} content]");
+                sb.AppendLine(System.IO.File.ReadAllText(krb5Conf));
+            }
+            
+            void VerifyEnvVar(string var)
+            {
+                var varValue = Environment.GetEnvironmentVariable(var);
+                sb.AppendLine($"{var}={varValue}");
+                if (!string.IsNullOrEmpty(varValue))
+                {
+                    var fileExists = System.IO.File.Exists(varValue);
+                    sb.AppendLine($"{varValue} = {(fileExists ? "exists" : "missing")}");
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        [HttpGet("/run")]
+        public string Run(string command)
+        {
+            var commandSegments = command.Split(" ");
+            var processName = commandSegments[0];
+            var args = commandSegments[1..];
+            // Start the child process.
+            try
+            {
+
+
+                Process p = new Process();
+                // Redirect the output stream of the child process.
+                p.StartInfo.UseShellExecute = false;
+                p.StartInfo.RedirectStandardOutput = true;
+                p.StartInfo.RedirectStandardError = true;
+                p.StartInfo.FileName = processName;
+                p.StartInfo.Arguments = string.Join(" ", args);
+                foreach (var (key, value) in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>().Select(x => ((string)x.Key, (string)x.Value)))
+                {
+                    p.StartInfo.EnvironmentVariables[key] = value;
+                }
+                p.Start();
+                // Do not wait for the child process to exit before
+                // reading to the end of its redirected stream.
+                // p.WaitForExit();
+                // Read the output stream first and then wait.
+                var output = p.StandardOutput.ReadToEnd();
+                var error = p.StandardError.ReadToEnd();
+                p.WaitForExit();
+                return $"{output}\n{error}";
+            }
+            catch (Exception e)
+            {
+                return e.ToString();
+            }
+        }
     }
 
     public class SqlServerInfo

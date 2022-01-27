@@ -56,16 +56,19 @@ namespace KerberosBuildpack
 
         protected void DoApply(AbsolutePath buildPath, AbsolutePath cachePath, AbsolutePath depsPath, int index)
         {
+            
             Apply(buildPath, cachePath, depsPath, index);
+            var profiled = buildPath / ".profile.d";
             
             var isPreStartOverriden = GetType().GetMethod(nameof(PreStartup), BindingFlags.Instance | BindingFlags.Public, null, new[] {typeof(AbsolutePath),typeof(AbsolutePath),typeof(int) }, null  )?.DeclaringType != typeof(BuildpackBase);
             var buildpackDepsDir = Path.Combine(depsPath, index.ToString());
             Directory.CreateDirectory(buildpackDepsDir);
-            var profiled = buildPath / ".profile.d";
             Directory.CreateDirectory(profiled);
+            InstallStartupEnvVars(profiled, index, false);
             
             if (isPreStartOverriden) 
             {
+                Console.WriteLine("KerberosBuildpack - PreStartup");
                 // copy buildpack to deps dir so we can invoke it as part of startup
                 var assemblyFolder = Path.GetDirectoryName(GetType().Assembly.Location)!;
                 foreach(var file in Directory.EnumerateFiles(assemblyFolder))
@@ -78,7 +81,7 @@ namespace KerberosBuildpack
                 var startupScriptName = $"{index:00}_{nameof(KerberosBuildpack)}_startup.sh";
                 var startupScript = $"#!/bin/bash\n$DEPS_DIR/{index}/{prestartCommand} {index}\n";
                 File.WriteAllText(Path.Combine(profiled,startupScriptName), startupScript);
-                InstallStartupEnvVars(profiled, index, false);
+                // InstallStartupEnvVars(profiled, index, false);
                 GetEnvScriptFile(profiled, index, true); // causes empty env file to be created so it can (potentially) be populated with vars during onstart hook
             }
             
@@ -91,13 +94,13 @@ namespace KerberosBuildpack
             var envScriptName = Path.Combine(profiled, $"{prefix}{index:00}_{nameof(KerberosBuildpack)}_env{suffix}");
             // ensure it's initialized
             if(!File.Exists(envScriptName))
-                File.WriteAllText(envScriptName, string.Empty);
+                File.WriteAllText(envScriptName, "#!/bin/bash\n");
             return envScriptName;
         }
         protected void InstallStartupEnvVars(AbsolutePath profiled, int index, bool isPreStart)
         {
             var envScriptName = GetEnvScriptFile(profiled, index, isPreStart);
-            
+            Console.WriteLine(envScriptName);
             if (EnvironmentalVariables.Any())
             {
                 if (IsLinux)
