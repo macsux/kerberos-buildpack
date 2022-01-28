@@ -1,14 +1,91 @@
-# Experiments to get Container Credentials Manager working with custom plugin. 
+# IWA in Containers without domain joining
 
-### Goal: 
+This is a proof of concept of Container Credential Guard plugin that allows launching containers for IWA (Kerberos) on non-domain joined machines.
 
-Implement a C# plugin that is invoked by CCM to provide credentials for container launch on non-domain joined machine. The process is documented in the following articles:
+
+
+## How it works
+
+Docker runtime on Windows allow containers to be launched under gMSA account. You need a special user account that has been granted access to retrieve password for gMSA account (lets call it `gmsa.plugin`). A plugin is registered on the host, which provides docker runtime with credentials to `gmsa.plugin`. A special json launch file (CredentialsSpec) is used to instruct docker runtime of the domain controller addresses, the gMSA account to assign to the container as the identity, the plugin to be used. When container is lauched, an optional parameter can be passed into `docker run` to instruct it to use credential spec json file in order to authenticate under gMSA and set it as container identity.
+
+### Reference info: 
 
 https://docs.microsoft.com/en-us/virtualization/windowscontainers/manage-containers/manage-serviceaccounts
 
 https://docs.microsoft.com/en-us/windows/win32/api/ccgplugins/nf-ccgplugins-iccgdomainauthcredentials-getpasswordcredentials
 
-### Current problem: 
+
+
+## How to use
+
+1. Compile the plugin (Requires windows machine with .NET 6 SDK installed)
+   ```
+   dotnet build
+   ```
+
+2. Register the plugin on the non-domain joined host
+
+   1. From the resulting DLL directory (`bin\Debug`), run the following
+
+   ```
+   C:\Windows\Microsoft.NET\Framework64\v4.0.30319\regsvcs /fc CcgPlugin.dll
+   ```
+
+   2. Add the following registry key (You may need to change permissions first before being able to modify `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CCG` registry path)
+
+   ```
+   Windows Registry Editor Version 5.00
+   
+   [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CCG\COMClasses\{DEFFF03C-3245-465F-8391-CC586A2D1F32}]
+   ```
+
+3. Perform steps for **non domain-joined hosts** in [this article](https://docs.microsoft.com/en-us/virtualization/windowscontainers/manage-containers/manage-serviceaccounts) to setup gMSA account, gMSA plugin account, and create credentials spec.
+
+   1. You should run `New-CredentialSpec` powershell commandlet on domain joined machine to ensure correct values are generated. This commandlet requires that you have an existing directory `C:\ProgramData\Docker\CredentialSpecs`.
+
+4. Copy the resulting `credspec.json` to the non domain joined host's `C:\ProgramData\Docker\CredentialSpecs` directory
+
+5. Edit `credspec.json` and MERGE in the following values (under existing `ActiveDirectoryConfig` section)
+
+   ```
+   {
+       "ActiveDirectoryConfig": {
+           "HostAccountConfig": {
+             "PortableCcgVersion": "1",
+             "PluginGUID": "{DEFFF03C-3245-465F-8391-CC586A2D1F32}",
+             "PluginInput": "gmsa.plugin@mydomain.com:P@ssw0rd"
+           }
+       }
+   }
+   ```
+
+   Change `PluginInput` to use account you created in step 3 that is allowed to retrieve gMSA credentials.
+
+6. Ensure that the domain controller is reachable on the following ports
+
+   | Protocol and port | Purpose  |
+   | :---------------- | :------- |
+   | TCP and UDP 53    | DNS      |
+   | TCP and UDP 88    | Kerberos |
+   | TCP 139           | NetLogon |
+   | TCP and UDP 389   | LDAP     |
+   | TCP 636           | LDAP SSL |
+
+5. Launch container by passing in name of credential spec json as parameter like this (only filename - not path)
+
+   ```
+   docker run --security-opt "credentialspec=file://credspec.json" -it mcr.microsoft.com/windows/servercore:ltsc2019 powershell
+   ```
+
+6. Verify that Kerberos ticket can be obtained by invoking. 
+
+   ```
+   klist get <MY_GMSA_ACCOUNT>
+   ```
+
+
+
+### Current problem - SOLVED (below info for historic reference): 
 
 Cannot get CCM to activate COM plugin component
 
