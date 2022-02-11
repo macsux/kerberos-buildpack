@@ -5,10 +5,10 @@ applications:
   memory: 512M
   health-check-type: none
   buildpacks: 
-    - https://github.com/macsux/kerberos-buildpack/releases/download/v1.0.7/KerberosBuildpack-linux-x64-v1.0.7.zip
+    - https://github.com/macsux/kerberos-buildpack/releases/download/v1.0.9/KerberosBuildpack-linux-x64-v1.0.9.zip
     - dotnet_core_buildpack
   env:
     KRB5_KDC: dc1.macsux.com
     KRB_SERVICE_ACCOUNT: iwaclient@macsux.com
     KRB_PASSWORD: P@ssw0rd
-    ConnectionStrings__SqlServer: Server=ad.almirex.com;Database=master;Trusted_Connection=True;TrustServerCertificate=True
+    ConnectionStrings__SqlServer: Server=dc1.macsux.com;Database=master;Trusted_Connection=True;TrustServerCertificate=True

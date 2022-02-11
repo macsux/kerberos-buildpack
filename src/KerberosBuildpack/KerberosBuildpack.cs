@@ -23,7 +23,7 @@ namespace KerberosBuildpack
 
         protected override void Apply(AbsolutePath buildPath, AbsolutePath cachePath, AbsolutePath depsPath, int index)
         {
-            Console.WriteLine("==== Installing Kerberos Buildpack ==== ");
+            Console.WriteLine($"==== Installing Kerberos Buildpack v{ThisAssembly.AssemblyFileVersion} ==== ");
             var myDependenciesDirectory = depsPath / index.ToString(); // store any runtime dependencies not belonging to the app in this directory
             var krb5Dir = buildPath / ".krb5";
             
