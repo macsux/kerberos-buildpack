@@ -5,6 +5,6 @@ Logging:
     Microsoft.Hosting.Lifetime: Information
 KRB_SERVICE_ACCOUNT: iwaclient@macsux.com
 KRB_PASSWORD: P@ssw0rd
-KRB_KDC: dc1.macsux.com1
+KRB_KDC: dc1.macsux.com
 Routes:
   - "http://iwaclient"

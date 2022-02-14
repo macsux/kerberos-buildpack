@@ -79,7 +79,10 @@ public class KerberosWorker : BackgroundService
 
     private async Task CreateMitKerberosKrb5Config()
     {
-        await File.WriteAllTextAsync(_options.CurrentValue.Kerb5ConfigFile,  _options.CurrentValue.KerberosClient.Configuration.Serialize(), _cancellationToken);
+        if (_options.CurrentValue.GenerateKrb5)
+        {
+            await File.WriteAllTextAsync(_options.CurrentValue.Kerb5ConfigFile, _options.CurrentValue.KerberosClient.Configuration.Serialize(), _cancellationToken);
+        }
     }
 
     /// <summary>
@@ -117,6 +120,11 @@ public class KerberosWorker : BackgroundService
                 var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_SRV_HST, realm, new[] { spn }), salt: salt, etype: encryptionType);
                 kerberosKeys.Add(key);
             }
+        }
+        foreach (var (encryptionType, salt) in credentials.Salts)
+        {
+            var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { $"{credentials.UserName}@{credentials.Domain.ToUpper()}" }), salt: salt, etype: encryptionType);
+            kerberosKeys.Add(key);
         }
         var keyTable = new KeyTable(kerberosKeys.ToArray());
         return keyTable;

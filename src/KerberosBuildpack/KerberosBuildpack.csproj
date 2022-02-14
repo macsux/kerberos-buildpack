@@ -10,13 +10,13 @@
 
   <ItemGroup>
     <PackageReference Include="CommandDotNet" Version="3.0.2" />
-    <PackageReference Include="Kerberos.NET" Version="4.5.124" />
+<!--    <PackageReference Include="Kerberos.NET" Version="4.5.124" />-->
     <PackageReference Include="NMica.Utils" Version="1.0.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\KerberosSidecar\KerberosSidecar.csproj" />
-  </ItemGroup>
+<!--  <ItemGroup>-->
+<!--    <ProjectReference Include="..\KerberosSidecar\KerberosSidecar.csproj" />-->
+<!--  </ItemGroup>-->
 
   <ItemGroup>
     <EmbeddedResource Include="launch.yaml" />

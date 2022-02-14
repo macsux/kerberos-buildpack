@@ -43,6 +43,11 @@ services.AddOptions<KerberosOptions>()
         options.Kerb5ConfigFile ??= Path.Combine(userKerbDir, "krb5.conf");
         options.KeytabFile ??= Path.Combine(userKerbDir, "krb5.keytab");
         options.CacheFile ??= Path.Combine(userKerbDir, "krb5cc");
+        options.GenerateKrb5 = options.Kerb5ConfigFile != null! ? !File.Exists(options.Kerb5ConfigFile) : true;
+        if (!options.GenerateKrb5)
+        {
+            log.LogInformation("Existing krb5.config was detected");
+        }
         Directory.CreateDirectory(Path.GetDirectoryName(options.Kerb5ConfigFile)!);
         Directory.CreateDirectory(Path.GetDirectoryName(options.KeytabFile)!);
         Directory.CreateDirectory(Path.GetDirectoryName(options.CacheFile)!);
@@ -50,6 +55,9 @@ services.AddOptions<KerberosOptions>()
         // var config = File.Exists(options.Kerb5ConfigFile) ? Krb5Config.Parse(File.ReadAllText(options.Kerb5ConfigFile)) : Krb5Config.Default();
         var config = Krb5Config.Default();
         config.Defaults.DefaultCCacheName = options.CacheFile;
+        config.Defaults.DefaultKeytabName = options.KeytabFile;
+        config.Defaults.DefaultClientKeytabName = options.KeytabFile;
+        
         string realm;
         try
         {
@@ -62,9 +70,13 @@ services.AddOptions<KerberosOptions>()
         options.Kdc ??= realm;
         if (realm != null)
         {
+            config.Defaults.DefaultRealm = realm;
             config.Realms[realm].Kdc.Add(options.Kdc);
+            config.Realms[realm].DefaultDomain = realm.ToLower();
+            config.DomainRealm.Add(realm.ToLower(), realm.ToUpper());
+            config.DomainRealm.Add($".{realm.ToLower()}", realm.ToUpper());
         }
-
+        
         var client = new KerberosClient(config, loggerFactory);
         client.CacheInMemory = false;
         client.Cache = new Krb5TicketCache(options.CacheFile);
