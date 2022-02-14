@@ -43,26 +43,45 @@ services.AddOptions<KerberosOptions>()
         options.Kerb5ConfigFile ??= Path.Combine(userKerbDir, "krb5.conf");
         options.KeytabFile ??= Path.Combine(userKerbDir, "krb5.keytab");
         options.CacheFile ??= Path.Combine(userKerbDir, "krb5cc");
+        options.GenerateKrb5 = options.Kerb5ConfigFile != null! ? !File.Exists(options.Kerb5ConfigFile) : true;
+        
         Directory.CreateDirectory(Path.GetDirectoryName(options.Kerb5ConfigFile)!);
         Directory.CreateDirectory(Path.GetDirectoryName(options.KeytabFile)!);
         Directory.CreateDirectory(Path.GetDirectoryName(options.CacheFile)!);
 
         // var config = File.Exists(options.Kerb5ConfigFile) ? Krb5Config.Parse(File.ReadAllText(options.Kerb5ConfigFile)) : Krb5Config.Default();
-        var config = Krb5Config.Default();
-        config.Defaults.DefaultCCacheName = options.CacheFile;
-        string realm;
-        try
+        Krb5Config config;
+        if (options.GenerateKrb5)
         {
-            realm = new KerberosPasswordCredential(options.ServiceAccount, options.Password).Domain;
+            log.LogInformation("No krb5.conf exists - generating");
+            config = Krb5Config.Default();
+            string realm;
+            try
+            {
+                realm = new KerberosPasswordCredential(options.ServiceAccount, options.Password).Domain;
+            }
+            catch (Exception)
+            {
+                return; // we're gonna handle this case during validation
+            }
+
+            options.Kdc ??= realm;
+            if (realm != null)
+            {
+                config.Defaults.DefaultRealm = realm;
+                config.Realms[realm].Kdc.Add(options.Kdc);
+                config.Realms[realm].DefaultDomain = realm.ToLower();
+                config.DomainRealm.Add(realm.ToLower(), realm.ToUpper());
+                config.DomainRealm.Add($".{realm.ToLower()}", realm.ToUpper());
+            }
+            config.Defaults.DefaultCCacheName = options.CacheFile;
+            config.Defaults.DefaultKeytabName = options.KeytabFile;
+            config.Defaults.DefaultClientKeytabName = options.KeytabFile;
         }
-        catch (Exception)
+        else
         {
-            return; // we're gonna handle this case during validation
-        }
-        options.Kdc ??= realm;
-        if (realm != null)
-        {
-            config.Realms[realm].Kdc.Add(options.Kdc);
+            log.LogInformation("Existing krb5.conf was detected");
+            config = Krb5Config.Parse(File.ReadAllText(options.Kerb5ConfigFile!));
         }
 
         var client = new KerberosClient(config, loggerFactory);

@@ -1,19 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
-using Kerberos.NET;
-using Kerberos.NET.Client;
-using Kerberos.NET.Configuration;
-using Kerberos.NET.Credentials;
-using Kerberos.NET.Crypto;
-using Kerberos.NET.Entities;
-using Kerberos.NET.Transport;
+﻿using System.Reflection;
 using NMica.Utils.IO;
 
 namespace KerberosBuildpack
@@ -30,6 +15,7 @@ namespace KerberosBuildpack
             EnvironmentalVariables["KRB5_CONFIG"] = "/home/vcap/app/.krb5/krb5.conf";
             EnvironmentalVariables["KRB5CCNAME"] = "/home/vcap/app/.krb5/krb5cc";
             EnvironmentalVariables["KRB5_KTNAME"] = "/home/vcap/app/.krb5/service.keytab";
+            EnvironmentalVariables["KRB5_CLIENT_KTNAME"] = "/home/vcap/app/.krb5/service.keytab";
             
             Directory.CreateDirectory(krb5Dir);
 

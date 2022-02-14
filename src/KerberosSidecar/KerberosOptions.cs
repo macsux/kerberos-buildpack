@@ -37,6 +37,7 @@ public class KerberosOptions
     public KerberosClient KerberosClient { get; set; } = null!;
 
     public bool RunOnce { get; set; }
+    public bool GenerateKrb5 { get; set; }
 
     public class Validator : IValidateOptions<KerberosOptions>
     {
