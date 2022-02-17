@@ -1,0 +1,14 @@
+---
+applications:
+- name: KerberosDemo
+  path: bin/Debug/net5.0/publish
+  memory: 512M
+  health-check-type: none
+  buildpacks: 
+    - https://github.com/macsux/kerberos-buildpack/releases/download/WIP/KerberosBuildpack-linux-x64-WIP.zip
+    - dotnet_core_buildpack
+  env:
+    KRB5_KDC: dc1.macsux.com
+    KRB_SERVICE_ACCOUNT: ""
+    KRB_PASSWORD: ""
+    ConnectionStrings__SqlServer: Server=dc1.macsux.com;Database=master;Trusted_Connection=True;TrustServerCertificate=True

@@ -1,8 +1,10 @@
 #pragma warning disable IL2026
+using System.Net;
 using Kerberos.NET.Client;
 using Kerberos.NET.Configuration;
 using Kerberos.NET.Credentials;
 using KerberosSidecar;
+using KerberosSidecar.CloudFoundry;
 using KerberosSidecar.HealthChecks;
 using KerberosSidecar.Spn;
 using Microsoft.AspNetCore.Builder;
@@ -13,13 +15,15 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Steeltoe.Extensions.Configuration.CloudFoundry;
 
 
 var webHostBuilder = WebApplication.CreateBuilder(args);
 
-webHostBuilder.Configuration.AddYamlFile("appsettings.yaml", optional: true, reloadOnChange: true);
-webHostBuilder.Configuration.AddYamlFile($"appsettings.{webHostBuilder.Environment.EnvironmentName}.yaml", optional: true, reloadOnChange: true);
-
+webHostBuilder.Configuration
+    .AddYamlFile("appsettings.yaml", optional: true, reloadOnChange: true)
+    .AddYamlFile($"appsettings.{webHostBuilder.Environment.EnvironmentName}.yaml", optional: true, reloadOnChange: true)
+    .AddCloudFoundry();
 var services = webHostBuilder.Services;
 services.AddOptions<KerberosOptions>()
     .Configure(c =>
@@ -33,6 +37,18 @@ services.AddOptions<KerberosOptions>()
         c.Kdc = config.GetValue<string>("KRB_KDC");
         c.RunOnce = config.GetValue<bool>("KRB_RunOnce");
     })
+    .Configure<IConfiguration>((options, config) =>
+    {
+        var serviceBindingCredentials = config.GetServiceBindings()
+            .Where(x => x.Tags.Contains("kerberos-service-principal"))
+            .Select(x => x.GetCredentials<ServiceCredentials>())
+            .FirstOrDefault();
+        if (serviceBindingCredentials != null)
+        {
+            options.ServiceAccount = serviceBindingCredentials.ServiceAccount;
+            options.Password = serviceBindingCredentials.Password;
+        }
+    })
     .PostConfigure<ILoggerFactory>((options, loggerFactory) =>
     {
         var log = loggerFactory.CreateLogger<Program>();
@@ -40,10 +56,12 @@ services.AddOptions<KerberosOptions>()
         var userKerbDir = Path.Combine(homeDir, ".krb5");
 
         // default files to user's ~/.krb/ folder if not set
+        // ReSharper disable ConstantNullCoalescingCondition
         options.Kerb5ConfigFile ??= Path.Combine(userKerbDir, "krb5.conf");
         options.KeytabFile ??= Path.Combine(userKerbDir, "krb5.keytab");
         options.CacheFile ??= Path.Combine(userKerbDir, "krb5cc");
-        options.GenerateKrb5 = options.Kerb5ConfigFile != null! ? !File.Exists(options.Kerb5ConfigFile) : true;
+        // ReSharper restore ConstantNullCoalescingCondition
+        options.GenerateKrb5 = options.Kerb5ConfigFile == null! || !File.Exists(options.Kerb5ConfigFile);
         
         Directory.CreateDirectory(Path.GetDirectoryName(options.Kerb5ConfigFile)!);
         Directory.CreateDirectory(Path.GetDirectoryName(options.KeytabFile)!);

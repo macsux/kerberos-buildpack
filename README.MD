@@ -30,7 +30,6 @@ applications:
 
 ```
 
-
 ** Adjust URL of the Kerberos buildpack to latest version. You can get the full zip URL from [Releases](https://github.com/macsux/kerberos-buildpack/releases) page.
 
 ## How it works
@@ -42,6 +41,65 @@ applications:
 Core libraries used by .NET and Java apps use MIT Kerberos to do Kerberos (aka Integrated) authentication when running on Linux. This buildpack configures MIT Kerberos, and obtains the necessary initial TGT tickets necessary for the app to acquire authentication tickets.
 
 A sidecar runs in background that will obtain tickets Kerberos .NET 
+
+## Secure credentials with CredHub integration
+
+Instead of of injecting service credentials as environmental variables, this buildpack supports injecting it securely via CredHub integration. This will safely store creds associated with the app inside CredHub, and they will be injected as environmental variables when container starts. This will be only visible from the app - they will not be visible if the user tries to query environmental variables associated with the app.
+
+#### Prerequisite: [CredHub service broker](https://network.tanzu.vmware.com/products/credhub-service-broker) installed on the platform
+
+1. Omit KRB_SERVICE_ACCOUNT / KRB_PASSWORD from the manifest
+
+2. Create a file creds.json that looks similar to this:
+
+   ```json
+   {
+       "ServiceAccount": "iwaclient@macsux.com",
+       "Password": "P@ssw0rd"
+   }
+   ```
+
+3. Create a CredHub service instance that carries the above credentials as following:
+
+   ```
+   cf create-service credhub default CREDS_SERVICE_INSTANCE_NAME -c .\creds.json -t kerberos-service-principal
+   ```
+
+4. Bind the credentials to the app
+
+   ```
+   cf bind-service APP_NAME CREDS_SERVICE_INSTANCE_NAME
+   ```
+
+5. Push the app
+
+## Embedding Kerberos configuration into buildpack
+
+By default the buildpack will attempt to generate an MIT Kerberos configuration file (krb5.conf) out of combination of KRB5_KDC and the realm portion of the service account (everything after `@`). This may not be sufficient in more complex environments and require full control of the `krb5.conf` to properly work. It may also be desirable to not have to include location of the KDC in the push manifest. In order to support these scenarios, the buildpack allows embedding `krb5.conf` before being deployed on the platform. This has the advantage of being uniformly applied to all apps and move control over this file in the hands of central platform operator. In order to include environment specific `krb5.conf` in the buildpack, it must be placed into the buildpack zip file under `/deps/.krb5/krb5.conf`. This can be accomplished by creating a local directory structure that looks like this:
+
+```
+.
+├── KerberosBuildpack-linux-x64-v1.0.0.zip
+├── deps
+│   └── .krb5
+│       └── krb5.conf
+```
+
+After run the following command to patch the zip file with config file:
+
+Powershell
+
+```
+Compress-Archive -Update -Path deps -DestinationPath KerberosBuildpack-linux-x64-v1.0.0.zip
+```
+
+Linux shell
+
+```
+zip -ur KerberosBuildpack-linux-x64-v1.0.0.zip deps
+```
+
+
 
 ## Troubleshooting
 
