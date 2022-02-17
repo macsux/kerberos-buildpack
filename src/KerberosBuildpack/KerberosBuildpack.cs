@@ -10,19 +10,24 @@ namespace KerberosBuildpack
         {
             Console.WriteLine($"==== Installing Kerberos Buildpack v{ThisAssembly.AssemblyFileVersion} ==== ");
             var myDependenciesDirectory = depsPath / index.ToString(); // store any runtime dependencies not belonging to the app in this directory
-            var krb5Dir = buildPath / ".krb5";
+            var krb5TargetDir = buildPath / ".krb5";
             
             EnvironmentalVariables["KRB5_CONFIG"] = "/home/vcap/app/.krb5/krb5.conf";
             EnvironmentalVariables["KRB5CCNAME"] = "/home/vcap/app/.krb5/krb5cc";
             EnvironmentalVariables["KRB5_KTNAME"] = "/home/vcap/app/.krb5/service.keytab";
             EnvironmentalVariables["KRB5_CLIENT_KTNAME"] = "/home/vcap/app/.krb5/service.keytab";
             
-            Directory.CreateDirectory(krb5Dir);
+            Directory.CreateDirectory(krb5TargetDir);
 
             var currentAssemblyDir = ((AbsolutePath)Assembly.GetExecutingAssembly().Location).Parent;
             var buildpackDir = currentAssemblyDir.Parent;
             var sidecarSrcDir = buildpackDir / "deps"  / "sidecar";
             var sidecarTargetDir = myDependenciesDirectory / "sidecar";
+            var krb5SourceDir = buildpackDir / "deps" / ".krb5";
+            if (Directory.Exists(krb5SourceDir))
+            {
+                FileSystemTasks.CopyDirectoryRecursively(krb5SourceDir, krb5TargetDir, DirectoryExistsPolicy.Merge, FileExistsPolicy.Skip);
+            }
             
             FileSystemTasks.CopyDirectoryRecursively(sidecarSrcDir, sidecarTargetDir, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
             Console.WriteLine($"Sidecar process copied into $HOME/deps/{index}/sidecar");
