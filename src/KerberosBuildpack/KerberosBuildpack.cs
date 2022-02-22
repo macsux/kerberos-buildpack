@@ -17,6 +17,8 @@ namespace KerberosBuildpack
             EnvironmentalVariables["KRB5_KTNAME"] = "/home/vcap/app/.krb5/service.keytab";
             EnvironmentalVariables["KRB5_CLIENT_KTNAME"] = "/home/vcap/app/.krb5/service.keytab";
             
+            
+            
             Directory.CreateDirectory(krb5TargetDir);
 
             var currentAssemblyDir = ((AbsolutePath)Assembly.GetExecutingAssembly().Location).Parent;
@@ -24,6 +26,11 @@ namespace KerberosBuildpack
             var sidecarSrcDir = buildpackDir / "deps"  / "sidecar";
             var sidecarTargetDir = myDependenciesDirectory / "sidecar";
             var krb5SourceDir = buildpackDir / "deps" / ".krb5";
+            var krb5Environment = Environment.GetEnvironmentVariable("KRB_ENVIRONMENT");
+            if (krb5Environment != null)
+            {
+                krb5SourceDir = krb5SourceDir / krb5Environment;
+            }
             if (Directory.Exists(krb5SourceDir))
             {
                 FileSystemTasks.CopyDirectoryRecursively(krb5SourceDir, krb5TargetDir, DirectoryExistsPolicy.Merge, FileExistsPolicy.Skip);

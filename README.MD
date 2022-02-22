@@ -99,7 +99,22 @@ Linux shell
 zip -ur KerberosBuildpack-linux-x64-v1.0.0.zip deps
 ```
 
+### Multiple environment control
 
+If krb5.conf need to be different across environments, multiple krb5.conf can be embedded into the buildpack by creating a folder structure similar to the following and applying steps above:
+
+```
+.
+├── KerberosBuildpack-linux-x64-v1.0.0.zip
+├── deps
+│   └── krb5
+│       ├── prod
+│       │   └── krb5.conf
+│       └── qa
+│           └── krb5.conf
+```
+
+ You can control which `krb5.conf` is used by setting `KRB_ENVIRONMENT` environmental variable so it matches the folder name.
 
 ## Troubleshooting
 
