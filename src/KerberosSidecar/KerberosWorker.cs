@@ -53,7 +53,7 @@ public class KerberosWorker : BackgroundService
         {
             await CreateMitKerberosKrb5Config();
             await CreateMitKerberosKeytab();
-            await EnsureTgt();
+            await EnsureTgt(true);
             await _spnProvider.EnsureSpns(_cancellationToken);
             _tgtHealthCheck.LastException = null;
         }
@@ -88,13 +88,43 @@ public class KerberosWorker : BackgroundService
     /// <summary>
     /// Authenticates the principal and populates ticket cache
     /// </summary>
-    private async Task EnsureTgt()
+    private async Task EnsureTgt(bool initial)
     {
-        var credentials = await _credentialFactory.Get(_options.CurrentValue, _cancellationToken);
-        await _options.CurrentValue.KerberosClient.Authenticate(credentials);
-        _tgtHealthCheck.LastException = null;
-        _logger.LogInformation("Service authenticated successfully as '{Principal}'", credentials.UserName);
-        
+
+        try
+        {
+
+            var ticketCache = (Krb5TicketCache)_options.CurrentValue.KerberosClient.Cache;
+            var tgt = ticketCache.Krb5Cache.Credentials.FirstOrDefault(x => x.Server.Name.Contains("krbtgt"));
+            var credentials = await _credentialFactory.Get(_options.CurrentValue, _cancellationToken);
+
+            var hasTgt = tgt != null;
+            var tgtNeedsRenewal = tgt != null && DateTimeOffset.UtcNow.AddMinutes(15) > tgt.RenewTill && tgt.EndTime < DateTimeOffset.UtcNow;
+            if (tgt == null || tgt.EndTime < DateTimeOffset.UtcNow)
+            {
+                await _options.CurrentValue.KerberosClient.Authenticate(credentials);
+            }
+            else if (DateTimeOffset.UtcNow.AddMinutes(15) > tgt.RenewTill)
+            {
+                await _options.CurrentValue.KerberosClient.RenewTicket();
+            }
+            
+            if (initial)
+            {
+                _logger.LogInformation("Service authenticated successfully as '{Principal}'", credentials.UserName);
+            }
+            else
+            {
+                _logger.LogDebug("Service successfully renewed TGT ticket");
+            }
+
+            _tgtHealthCheck.LastException = null;
+            
+        }
+        catch (Exception e)
+        {
+            _tgtHealthCheck.LastException = e;
+        }
     }
 
     /// <summary>
@@ -136,20 +166,9 @@ public class KerberosWorker : BackgroundService
         await SetupMitKerberos();
         while (!stoppingToken.IsCancellationRequested)
         {
-            await RefreshTicketIfExpiring();
+            await EnsureTgt(false);
             await Task.Delay(1000, stoppingToken);
         }
     }
-
-    private async Task RefreshTicketIfExpiring()
-    {
-        var ticketCache = (Krb5TicketCache)_options.CurrentValue.KerberosClient.Cache;
-        var tgt = ticketCache.Krb5Cache.Credentials.FirstOrDefault(x => x.Server.Name.Contains("krbtgt"));
-        if(tgt == null)
-            return;
-        if (DateTimeOffset.UtcNow.AddMinutes(15) > tgt.RenewTill)
-        {
-            await _options.CurrentValue.KerberosClient.RenewTicket();
-        }
-    }
+    
 }
