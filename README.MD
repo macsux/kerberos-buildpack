@@ -73,6 +73,16 @@ Instead of of injecting service credentials as environmental variables, this bui
 
 5. Push the app
 
+## Managing credentials via service binding
+
+Instead of setting credentials directly as environmental variables, you can manage them as Custom User Provided Service and bind them to the app. In order to use CUPS, follow same steps as CredHub integration, but instead of creating credhub instance in step #3, create cups as following:
+
+```
+cf cups kerberoscreds -p .\creds.json -t kerberos-service-principal
+```
+
+  
+
 ## Embedding Kerberos configuration into buildpack
 
 By default the buildpack will attempt to generate an MIT Kerberos configuration file (krb5.conf) out of combination of KRB5_KDC and the realm portion of the service account (everything after `@`). This may not be sufficient in more complex environments and require full control of the `krb5.conf` to properly work. It may also be desirable to not have to include location of the KDC in the push manifest. In order to support these scenarios, the buildpack allows embedding `krb5.conf` before being deployed on the platform. This has the advantage of being uniformly applied to all apps and move control over this file in the hands of central platform operator. In order to include environment specific `krb5.conf` in the buildpack, it must be placed into the buildpack zip file under `/deps/.krb5/krb5.conf`. This can be accomplished by creating a local directory structure that looks like this:
