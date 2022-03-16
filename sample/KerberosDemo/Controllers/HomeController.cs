@@ -7,6 +7,7 @@ using File = System.IO.File;
 using System.Net.Sockets;
 using System.Security.Claims;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
@@ -135,9 +136,10 @@ namespace KerberosDemo.Controllers
         }
 
         [HttpGet("/diag")]
-        public string Diagnostics()
+        public async Task<string> Diagnostics()
         {
             var sb = new StringBuilder();
+            sb.AppendLine("==== KRB5 files ====");
             VerifyEnvVar("KRB5_CONFIG");
             VerifyEnvVar("KRB5CCNAME");
             VerifyEnvVar("KRB5_KTNAME");
@@ -145,9 +147,19 @@ namespace KerberosDemo.Controllers
             var krb5Conf =  Environment.GetEnvironmentVariable("KRB5_CONFIG");
             if (!string.IsNullOrEmpty(krb5Conf))
             {
-                sb.AppendLine($"[{krb5Conf} content]");
+                sb.AppendLine($"==== {krb5Conf} content====");
                 sb.AppendLine(System.IO.File.ReadAllText(krb5Conf));
             }
+
+            sb.AppendLine("=== klist ===");
+            sb.AppendLine(await Run("klist"));
+
+            sb.AppendLine("==== KRB5_CLIENT_KTNAME keytab contents ===");
+            var readKtScript = @"read_kt %KRB5_CLIENT_KTNAME%
+list
+q";
+            sb.AppendLine(await Run("ktutil", Environment.ExpandEnvironmentVariables(readKtScript)));
+            
             
             void VerifyEnvVar(string var)
             {
@@ -164,7 +176,7 @@ namespace KerberosDemo.Controllers
         }
 
         [HttpGet("/run")]
-        public string Run(string command)
+        public async Task<string> Run(string command, string input = null)
         {
             var commandSegments = command.Split(" ");
             var processName = commandSegments[0];
@@ -177,6 +189,8 @@ namespace KerberosDemo.Controllers
                 Process p = new Process();
                 // Redirect the output stream of the child process.
                 p.StartInfo.UseShellExecute = false;
+                
+                p.StartInfo.RedirectStandardInput = true;
                 p.StartInfo.RedirectStandardOutput = true;
                 p.StartInfo.RedirectStandardError = true;
                 p.StartInfo.FileName = processName;
@@ -190,9 +204,18 @@ namespace KerberosDemo.Controllers
                 // reading to the end of its redirected stream.
                 // p.WaitForExit();
                 // Read the output stream first and then wait.
+                if (input != null)
+                {
+                    p.StandardInput.WriteLine(Environment.ExpandEnvironmentVariables(input));
+                }
                 var output = p.StandardOutput.ReadToEnd();
                 var error = p.StandardError.ReadToEnd();
-                p.WaitForExit();
+                var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                await p.WaitForExitAsync(cts.Token);
+                if (!p.HasExited)
+                {
+                    p.Kill();
+                }
                 return $"{output}\n{error}";
             }
             catch (Exception e)
