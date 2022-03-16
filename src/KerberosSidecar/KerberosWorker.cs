@@ -153,7 +153,7 @@ public class KerberosWorker : BackgroundService
         }
         foreach (var (encryptionType, salt) in credentials.Salts)
         {
-            var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { $"{credentials.UserName}@{credentials.Domain.ToUpper()}" }), salt: salt, etype: encryptionType);
+            var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { credentials.UserName }), salt: salt, etype: encryptionType);
             kerberosKeys.Add(key);
         }
         var keyTable = new KeyTable(kerberosKeys.ToArray());

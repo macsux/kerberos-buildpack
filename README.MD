@@ -6,7 +6,7 @@ Set the following environmental variables for your app:
 
 `KRB_SERVICE_ACCOUNT`: service account under which app runs in `username@domain.com` format 
 `KRB_PASSWORD`: service account password
-`KRB5_KDC`: (optional) Kerberos Key Distribution Center address. Defaults to domain part of `KRB_SERVICE_ACCOUNT`
+`KRB_KDC`: (optional) Kerberos Key Distribution Center address. Defaults to domain part of `KRB_SERVICE_ACCOUNT`
 
 Ensure that you have right SPNs in place for the service you're trying to authenticate to.
 
@@ -24,7 +24,7 @@ applications:
     - https://github.com/macsux/kerberos-buildpack/releases/download/v1.0.6/KerberosBuildpack-linux-x64-v1.0.6.zip
     - dotnet_core_buildpack
   env:
-    KRB5_KDC: ad.almirex.com
+    KRB_KDC: ad.almirex.com
     KRB_SERVICE_ACCOUNT: iwaclient@almirex.dc # MUST BE in format sAMAccountName@KerberosRealm
     KRB_PASSWORD: P@ssw0rd
 
@@ -85,7 +85,7 @@ cf cups kerberoscreds -p .\creds.json -t kerberos-service-principal
 
 ## Embedding Kerberos configuration into buildpack
 
-By default the buildpack will attempt to generate an MIT Kerberos configuration file (krb5.conf) out of combination of KRB5_KDC and the realm portion of the service account (everything after `@`). This may not be sufficient in more complex environments and require full control of the `krb5.conf` to properly work. It may also be desirable to not have to include location of the KDC in the push manifest. In order to support these scenarios, the buildpack allows embedding `krb5.conf` before being deployed on the platform. This has the advantage of being uniformly applied to all apps and move control over this file in the hands of central platform operator. In order to include environment specific `krb5.conf` in the buildpack, it must be placed into the buildpack zip file under `/deps/.krb5/krb5.conf`. This can be accomplished by creating a local directory structure that looks like this:
+By default the buildpack will attempt to generate an MIT Kerberos configuration file (krb5.conf) out of combination of KRB_KDC and the realm portion of the service account (everything after `@`). This may not be sufficient in more complex environments and require full control of the `krb5.conf` to properly work. It may also be desirable to not have to include location of the KDC in the push manifest. In order to support these scenarios, the buildpack allows embedding `krb5.conf` before being deployed on the platform. This has the advantage of being uniformly applied to all apps and move control over this file in the hands of central platform operator. In order to include environment specific `krb5.conf` in the buildpack, it must be placed into the buildpack zip file under `/deps/.krb5/krb5.conf`. This can be accomplished by creating a local directory structure that looks like this:
 
 ```
 .
