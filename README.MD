@@ -117,7 +117,7 @@ If krb5.conf need to be different across environments, multiple krb5.conf can be
 .
 ├── KerberosBuildpack-linux-x64-v1.0.0.zip
 ├── deps
-│   └── krb5
+│   └── .krb5
 │       ├── prod
 │       │   └── krb5.conf
 │       └── qa
