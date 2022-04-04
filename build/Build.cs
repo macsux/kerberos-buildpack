@@ -157,7 +157,7 @@ class Build : NukeBuild
                 .SetProject(demoProjectDirectory / "KerberosDemo.csproj")
                 .EnableNoRestore()
                 .SetConfiguration("DEBUG"));
-            var publishFolder = demoProjectDirectory / "bin" / "Debug" / "net5.0" / "publish";
+            var publishFolder = demoProjectDirectory / "bin" / "Debug" / "net6.0" / "publish";
             var manifestFile = publishFolder / "manifest.yml";
             var manifest = File.ReadAllText(manifestFile);
             manifest = manifest.ReplaceRegex(@"\r?\n\s*path:.+", match => match.Result(""));
