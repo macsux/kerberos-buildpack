@@ -28,6 +28,7 @@ using FileMode = System.IO.FileMode;
 using ZipFile = System.IO.Compression.ZipFile;
 using Credentials = Octokit.Credentials;
 using Project = Octokit.Project;
+// ReSharper disable TemplateIsNotCompileTimeConstantProblem
 
 [assembly: InternalsVisibleTo("KerberosBuildpackTests")]
 [CheckBuildProjectConfigurations]
@@ -136,7 +137,7 @@ class Build : NukeBuild
             ZipFile.CreateFromDirectory(workDirectory, tempZipFile, CompressionLevel.NoCompression, false);
             MakeFilesInZipUnixExecutable(tempZipFile);
             CopyFileToDirectory(tempZipFile, ArtifactsDirectory, FileExistsPolicy.Overwrite);
-            Logger.Block(ArtifactsDirectory / PackageZipName);
+            Serilog.Log.Information(ArtifactsDirectory / PackageZipName);
         });
 
     Target Restore => _ => _
@@ -217,7 +218,7 @@ class Build : NukeBuild
                 downloadLinks.Add(releaseAsset.BrowserDownloadUrl);
             }
 
-            Logger.Block(string.Join("\n", downloadLinks));
+            Serilog.Log.Information(string.Join("\n", downloadLinks));
         });
     
     Target Detect => _ => _
@@ -232,11 +233,11 @@ class Build : NukeBuild
                     .SetApplicationArguments(ApplicationDirectory)
                     .SetConfiguration(Configuration)
                     .SetFramework("netcoreapp3.1"));
-                Logger.Block("Detect returned 'true'");
+                Serilog.Log.Information("Detect returned 'true'");
             }
             catch (ProcessException)
             {
-                Logger.Block("Detect returned 'false'");
+                Serilog.Log.Information("Detect returned 'false'");
             }
         });
 
@@ -257,7 +258,7 @@ class Build : NukeBuild
                 .SetApplicationArguments($"{app} {cache} {app} {deps} {index}")
                 .SetConfiguration(Configuration)
                 .SetFramework("netcoreapp3.1"));
-            Logger.Block($"Buildpack applied. Droplet is available in {home}");
+            Serilog.Log.Information($"Buildpack applied. Droplet is available in {home}");
 
         });
 
