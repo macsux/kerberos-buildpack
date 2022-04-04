@@ -86,6 +86,7 @@ class Build : NukeBuild
         .Description("Cleans up **/bin and **/obj folders")
         .Executes(() =>
         {
+            (RootDirectory / "sample").GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
         });
