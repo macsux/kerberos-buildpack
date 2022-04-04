@@ -156,7 +156,6 @@ class Build : NukeBuild
             var demoProjectDirectory = RootDirectory / "sample" / "KerberosDemo";
             DotNetPublish(c => c
                 .SetProject(demoProjectDirectory / "KerberosDemo.csproj")
-                .EnableNoRestore()
                 .SetConfiguration("DEBUG"));
             var publishFolder = demoProjectDirectory / "bin" / "Debug" / "net6.0" / "publish";
             var manifestFile = publishFolder / "manifest.yml";
