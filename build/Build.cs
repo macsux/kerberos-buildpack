@@ -144,15 +144,13 @@ class Build : NukeBuild
         {
             DotNetRestore(c => c
                 .SetProjectFile(Solution));
-            
-            DotNetPublish(c => c
-                .SetProject(RootDirectory / "sample" / "Samples.sln"));
         });
 
     Target PublishSample => _ => _
         .DependsOn(Restore)
         .Executes(() =>
         {
+            EnsureExistingDirectory(ArtifactsDirectory);
             var demoProjectDirectory = RootDirectory / "sample" / "KerberosDemo";
             DotNetPublish(c => c
                 .SetProject(demoProjectDirectory / "KerberosDemo.csproj")
