@@ -10,6 +10,26 @@
           "type": "string",
           "description": "Application directory against which buildpack will be applied"
         },
+        "CfApiEndpoint": {
+          "type": "string",
+          "description": "Cloud Foundry Endpoint"
+        },
+        "CfOrg": {
+          "type": "string",
+          "description": "Cloud foundry org in which to deploy integration tests"
+        },
+        "CfPassword": {
+          "type": "string",
+          "description": "Cloud Foundry Password"
+        },
+        "CfSpace": {
+          "type": "string",
+          "description": "Cloud foundry space in which to deploy integration tests"
+        },
+        "CfUsername": {
+          "type": "string",
+          "description": "Cloud foundry username"
+        },
         "Configuration": {
           "type": "string",
           "description": "Configuration to build - Default is 'Debug' (local) or 'Release' (server)"
@@ -46,6 +66,22 @@
             "VSCode"
           ]
         },
+        "IntegrationTestKerbKdc": {
+          "type": "string",
+          "description": "KDC server used in integration tests"
+        },
+        "IntegrationTestKerbPassword": {
+          "type": "string",
+          "description": "Kerberos password used in integration tests"
+        },
+        "IntegrationTestKerbUser": {
+          "type": "string",
+          "description": "User principal used in integration tests"
+        },
+        "IntegrationTestSqlConnectionString": {
+          "type": "string",
+          "description": "SQL server connection string used in integration tests"
+        },
         "NoLogo": {
           "type": "boolean",
           "description": "Disables displaying the NUKE logo"
@@ -75,13 +111,20 @@
           "items": {
             "type": "string",
             "enum": [
+              "CfLogin",
               "Clean",
+              "DeploySampleApp",
               "Detect",
+              "EnsureCfTarget",
+              "InstallBuildpack",
               "Publish",
               "PublishSample",
               "Release",
               "Restore",
-              "Supply"
+              "SetCfTargetSpace",
+              "Supply",
+              "Test",
+              "TestFull"
             ]
           }
         },
@@ -95,15 +138,34 @@
           "items": {
             "type": "string",
             "enum": [
+              "CfLogin",
               "Clean",
+              "DeploySampleApp",
               "Detect",
+              "EnsureCfTarget",
+              "InstallBuildpack",
               "Publish",
               "PublishSample",
               "Release",
               "Restore",
-              "Supply"
+              "SetCfTargetSpace",
+              "Supply",
+              "Test",
+              "TestFull"
             ]
           }
+        },
+        "TestBuildpackName": {
+          "type": "string",
+          "description": "Name of the installed buildpack that is used for integration tests"
+        },
+        "UseCurrentCfLogin": {
+          "type": "boolean",
+          "description": "User current cf login"
+        },
+        "UseCurrentCfTarget": {
+          "type": "boolean",
+          "description": "User current cf target (org/space)"
         },
         "Verbosity": {
           "type": "string",

@@ -53,7 +53,7 @@ public class KerberosWorker : BackgroundService
         {
             await CreateMitKerberosKrb5Config();
             await CreateMitKerberosKeytab();
-            await EnsureTgt(true);
+            await EnsureTgt();
             await _spnProvider.EnsureSpns(_cancellationToken);
             _tgtHealthCheck.LastException = null;
         }
@@ -88,7 +88,7 @@ public class KerberosWorker : BackgroundService
     /// <summary>
     /// Authenticates the principal and populates ticket cache
     /// </summary>
-    private async Task EnsureTgt(bool initial)
+    private async Task EnsureTgt()
     {
 
         try
@@ -98,23 +98,15 @@ public class KerberosWorker : BackgroundService
             var tgt = ticketCache.Krb5Cache.Credentials.FirstOrDefault(x => x.Server.Name.Contains("krbtgt"));
             var credentials = await _credentialFactory.Get(_options.CurrentValue, _cancellationToken);
 
-            var hasTgt = tgt != null;
-            var tgtNeedsRenewal = tgt != null && DateTimeOffset.UtcNow.AddMinutes(15) > tgt.RenewTill && tgt.EndTime < DateTimeOffset.UtcNow;
+            
             if (tgt == null || tgt.EndTime < DateTimeOffset.UtcNow)
             {
                 await _options.CurrentValue.KerberosClient.Authenticate(credentials);
+                _logger.LogInformation("Service authenticated successfully as '{Principal}'", credentials.UserName);
             }
             else if (DateTimeOffset.UtcNow.AddMinutes(15) > tgt.RenewTill)
             {
                 await _options.CurrentValue.KerberosClient.RenewTicket();
-            }
-            
-            if (initial)
-            {
-                _logger.LogInformation("Service authenticated successfully as '{Principal}'", credentials.UserName);
-            }
-            else
-            {
                 _logger.LogDebug("Service successfully renewed TGT ticket");
             }
 
@@ -166,7 +158,7 @@ public class KerberosWorker : BackgroundService
         await SetupMitKerberos();
         while (!stoppingToken.IsCancellationRequested)
         {
-            await EnsureTgt(false);
+            await EnsureTgt();
             await Task.Delay(1000, stoppingToken);
         }
     }

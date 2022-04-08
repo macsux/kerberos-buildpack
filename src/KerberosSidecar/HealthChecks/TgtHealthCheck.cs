@@ -23,20 +23,38 @@ public class TgtHealthCheck : IHealthCheck
         {
             return HealthCheckResult.Unhealthy($"Not finished starting up");
         }
-        var ticketCache = (Krb5TicketCache)_options.CurrentValue.KerberosClient.Cache;
-        var tgt = ticketCache.Krb5Cache.Credentials.FirstOrDefault(x => x.Server.Name.Contains("krbtgt"));
-        if (tgt != null)
+
+        try
         {
-            if (tgt.EndTime > DateTimeOffset.UtcNow)
+
+            var ticketCache = (Krb5TicketCache)_options.CurrentValue.KerberosClient.Cache;
+            var tgt = ticketCache.Krb5Cache.Credentials.FirstOrDefault(x => x.Server.Name.Contains("krbtgt"));
+            if (tgt != null)
             {
-                if (LastException == null)
+                if (tgt.EndTime > DateTimeOffset.UtcNow)
                 {
-                    return HealthCheckResult.Healthy($"TGT successfully acquired for {tgt!.Client.FullyQualifiedName} until {tgt.EndTime}");
+                    if (LastException == null)
+                    {
+                        return HealthCheckResult.Healthy($"TGT successfully acquired for {tgt!.Client.FullyQualifiedName} until {tgt.EndTime}", data: new Dictionary<string, object>()
+                        {
+                            { "StartTime", tgt.StartTime },
+                            { "AuthTime", tgt.AuthTime },
+                            { "EndTime", tgt.EndTime },
+                            { "Principal", tgt.Client.FullyQualifiedName },
+                        });
+                    }
+
+                    return HealthCheckResult.Degraded("A valid TGT exists in ticket cache, but attempt to reacquire new TGT failed", LastException);
                 }
-                return  HealthCheckResult.Degraded("A valid TGT exists in ticket cache, but attempt to reacquire new TGT failed", LastException);
+
+                return HealthCheckResult.Unhealthy($"TGT is expired and has not been renewed", LastException);
             }
-            return HealthCheckResult.Unhealthy($"TGT is expired and has not been renewed", LastException);
+
+            return HealthCheckResult.Unhealthy($"TGT not found in cache", LastException);
         }
-        return HealthCheckResult.Unhealthy($"TGT not found in cache", LastException);
+        catch (OptionsValidationException)
+        {
+            return HealthCheckResult.Unhealthy($"App not properly configured");
+        }
     }
 }

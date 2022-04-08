@@ -3,7 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace KerberosSidecar;
+namespace KerberosSidecar.HealthChecks;
 
 public static class HealthCheckOptionsExtensions
 {
@@ -34,7 +34,7 @@ public static class HealthCheckOptionsExtensions
                     writer.WriteString("status", entry.Value.Status.ToString());
                     writer.WriteString("description", entry.Value.Description);
                     writer.WriteStartArray("exception");
-                    foreach (var line in entry.Value.Exception?.ToString().Split("\n") ?? Enumerable.Empty<string>())
+                    foreach (var line in entry.Value.Exception?.ToString().Split("\r\n") ?? Enumerable.Empty<string>())
                     {
                         writer.WriteStringValue(line);
                     }

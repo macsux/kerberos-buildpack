@@ -136,6 +136,7 @@ else
 services.AddSingleton<TgtHealthCheck>();
 var healthChecks = services.AddHealthChecks();
 healthChecks.AddCheck<TgtHealthCheck>("kerberos-tgt");
+healthChecks.AddCheck<OptionsHealthCheck>("options");
 if (services.FirstOrDefault(x => x.ServiceType == typeof(ISpnClient))?.ImplementationType != typeof(LoggingSpnClient))
 {
     healthChecks.AddCheck<SpnHealthCheck>("spn", HealthStatus.Degraded);

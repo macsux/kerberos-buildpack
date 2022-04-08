@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using File = System.IO.File;
 using System.Net.Sockets;
 using System.Security.Claims;
@@ -14,6 +16,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 
 namespace KerberosDemo.Controllers
 {
@@ -95,11 +98,13 @@ namespace KerberosDemo.Controllers
                 return @"Connection string not set. Set 'ConnectionStrings__SqlServer' environmental variable";
             }
 
+            Console.WriteLine("About to run query");
             sb.AppendLine($"Connection String: {connectionString}");
             var sqlClient = new SqlConnection(connectionString);
             try
             {
                 var serverInfo = sqlClient.QuerySingle<SqlServerInfo>("SELECT @@servername AS Server, @@version as Version, DB_NAME() as [Database]");
+                Console.WriteLine("Ran query");
                 sb.AppendLine($"Successfully connected to {serverInfo.Server}");
                 sb.AppendLine(serverInfo.Version);
             }
@@ -111,6 +116,15 @@ namespace KerberosDemo.Controllers
             }
             
             return sb.ToString();
+        }
+        
+        [HttpGet("/getfile")]
+        public ActionResult<byte[]> ReadFile(string file)
+        {
+            if (!System.IO.File.Exists(file))
+                return NotFound($"{file} not found");
+            return File(System.IO.File.OpenRead(file), "application/octet-stream", Path.GetFileName(file));
+
         }
 
         [HttpGet("/testkdc")]
@@ -135,6 +149,14 @@ namespace KerberosDemo.Controllers
             }
         }
 
+        [HttpGet("/sidecarhealth")]
+        public async Task<string> SidecarHealth()
+        {
+            var client = new HttpClient();
+            var healthResult = await client.GetStringAsync("http://localhost:9090/health/ready");
+            return healthResult;
+        }
+        
         [HttpGet("/diag")]
         public async Task<string> Diagnostics()
         {
@@ -175,6 +197,12 @@ q";
             return sb.ToString();
         }
 
+        [HttpGet("/env")]
+        public Dictionary<string,string> EnvVars()
+        {
+            return Environment.GetEnvironmentVariables().Cast<DictionaryEntry>().ToDictionary(x => x.Key.ToString(), x => x.Value.ToString());
+        }
+        
         [HttpGet("/run")]
         public async Task<string> Run(string command, string input = null)
         {

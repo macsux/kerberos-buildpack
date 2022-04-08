@@ -1,9 +1,9 @@
 ---
 applications:
 - name: KerberosDemo
-  path: bin/Debug/net5.0/publish
+  path: bin/Debug/net6.0/publish
   memory: 512M
-  health-check-type: none
+  health-check-type: port
   buildpacks: 
     - https://github.com/macsux/kerberos-buildpack/releases/download/v1.0.16/KerberosBuildpack-linux-x64-v1.0.16.zip
     - dotnet_core_buildpack

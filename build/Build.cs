@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ICSharpCode.SharpZipLib.Zip;
@@ -21,19 +22,23 @@ using Nuke.Common.Tools.NerdbankGitVersioning;
 using Nuke.Common.Utilities.Collections;
 using Octokit;
 using LibGit2Sharp;
+using Nuke.Common.CI.AzurePipelines;
+using Nuke.Common.Tools.CloudFoundry;
 using Nuke.Common.Utilities;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using FileMode = System.IO.FileMode;
 using ZipFile = System.IO.Compression.ZipFile;
 using Credentials = Octokit.Credentials;
+using Newtonsoft.Json.Linq;
 using Project = Octokit.Project;
+using static Nuke.Common.Tools.CloudFoundry.CloudFoundryTasks;
 // ReSharper disable TemplateIsNotCompileTimeConstantProblem
 
 [assembly: InternalsVisibleTo("KerberosBuildpackTests")]
 [CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
-class Build : NukeBuild
+partial class Build : NukeBuild
 {
     /// Support plugins are available for:
     ///   - JetBrains ReSharper        https://nuke.build/resharper
@@ -41,12 +46,6 @@ class Build : NukeBuild
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
 
-    [Flags]
-    public enum StackType
-    {
-        Windows = 1,
-        Linux = 2
-    }
     public static int Main () => Execute<Build>(x => x.Publish);
     const string BuildpackProjectName = "KerberosBuildpack";
     [GitRepositoryExt] LibGit2Sharp.Repository GitRepository;
@@ -55,6 +54,9 @@ class Build : NukeBuild
     readonly string Runtime = "linux-x64";
     readonly string Framework = "net6.0";
     
+    
+    
+    
     [Parameter("GitHub personal access token with access to the repo")]
     string GitHubToken;
 
@@ -62,6 +64,7 @@ class Build : NukeBuild
     readonly string ApplicationDirectory;
     
     [Solution] readonly Solution Solution;
+    string BuildpackSolution => RootDirectory / "src"  / "KerberosBuildpack.sln";
     string PackageZipName => $"{BuildpackProjectName}-{Runtime}-{ReleaseName}.zip";
     string SampleZipName => $"sampleapp-{Runtime}-{ReleaseName}.zip";
     [NerdbankGitVersioning(UpdateBuildNumber = true)] readonly NerdbankGitVersioning GitVersion;
@@ -98,7 +101,7 @@ class Build : NukeBuild
         .Executes(() =>
         {
             var workDirectory = TemporaryDirectory / "pack";
-            EnsureCleanDirectory(TemporaryDirectory);
+            EnsureCleanDirectory(workDirectory);
             var buildpackProject = Solution.GetProject(BuildpackProjectName) ?? throw new Exception($"Unable to find project called {BuildpackProjectName} in solution {Solution.Name}");
             var sidecarProject = Solution.GetProject("KerberosSidecar") ?? throw new Exception($"Unable to find project called KerberosSidecar in solution {Solution.Name}");
             var buildpackPublishDirectory = GetPublishDirectory(buildpackProject);
@@ -108,7 +111,7 @@ class Build : NukeBuild
 
 
             DotNetPublish(s => s
-                .SetProject(Solution)
+                .SetProject(BuildpackSolution)
                 .SetConfiguration(Configuration)
                 .SetFramework(Framework)
                 .SetRuntime(Runtime)
@@ -135,6 +138,7 @@ class Build : NukeBuild
             
             var tempZipFile = TemporaryDirectory / PackageZipName;
 
+            DeleteFile(tempZipFile);
             ZipFile.CreateFromDirectory(workDirectory, tempZipFile, CompressionLevel.NoCompression, false);
             MakeFilesInZipUnixExecutable(tempZipFile);
             CopyFileToDirectory(tempZipFile, ArtifactsDirectory, FileExistsPolicy.Overwrite);
@@ -156,13 +160,13 @@ class Build : NukeBuild
             var demoProjectDirectory = RootDirectory / "sample" / "KerberosDemo";
             DotNetPublish(c => c
                 .SetProject(demoProjectDirectory / "KerberosDemo.csproj")
-                .SetConfiguration("DEBUG"));
-            var publishFolder = demoProjectDirectory / "bin" / "Debug" / "net6.0" / "publish";
+                .SetConfiguration(Configuration));
+            var publishFolder = demoProjectDirectory / "bin" / Configuration / "net6.0" / "publish";
             var manifestFile = publishFolder / "manifest.yml";
             var manifest = File.ReadAllText(manifestFile);
             manifest = manifest.ReplaceRegex(@"\r?\n\s*path:.+", match => match.Result(""));
             File.WriteAllText(manifestFile, manifest);
-            var artifactZip = ArtifactsDirectory / $"sampleapp-{Runtime}-{ReleaseName}.zip";
+            var artifactZip = ArtifactsDirectory / SampleZipName;
             DeleteFile(artifactZip);
             ZipFile.CreateFromDirectory(publishFolder, artifactZip, CompressionLevel.NoCompression, false);
         });
@@ -220,6 +224,8 @@ class Build : NukeBuild
 
             Serilog.Log.Information(string.Join("\n", downloadLinks));
         });
+
+    
     
     Target Detect => _ => _
         .Description("Invokes buildpack 'detect' lifecycle event")
