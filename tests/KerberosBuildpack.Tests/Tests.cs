@@ -15,13 +15,17 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace KerberosBuildpack.Tests;
 
 public class Tests
 {
-    public Tests()
+    private readonly ITestOutputHelper _output;
+
+    public Tests(ITestOutputHelper output)
     {
+        _output = output;
         var config = new ConfigurationBuilder()
             .AddYamlFile("appsettings.yaml", true, true)
             .AddYamlFile("appsettings.User.yaml", true, true)
@@ -110,7 +114,15 @@ public class Tests
         var sidecarHealth = JsonConvert.DeserializeObject<HealthReport>(jsonResponse);
         sidecarHealth.Status.Should().Be(HealthStatus.Healthy, because: $"Sidecar is unhealthy. Deatils:\n {jsonResponse}");
     }
-    
+
+    [Fact]
+    public async Task SqlConnectionCheck()
+    {
+        var response = await _client.GetAsync("sql");
+        var body = await response.Content.ReadAsStringAsync();
+        response.IsSuccessStatusCode.Should().BeTrue(body);
+        _output.WriteLine(body);
+    }
     
 
     private async Task<string> RunRemote(string command, string? input = null)
