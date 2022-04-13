@@ -39,4 +39,8 @@
     <None Include="..\GitVersion.yml" Condition="Exists('..\GitVersion.yml')" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Nuke\Common\CI\GitHubActions\Configuration" />
+  </ItemGroup>
+
 </Project>
