@@ -1,0 +1,43 @@
+﻿version: '3.0'
+services:
+  demo:
+    image: krbdemo
+    build: .
+    depends_on:
+      - sidecar
+    ports:
+      - '8080:8080'
+    environment:
+      KRB5_CONFIG: '/home/vcap/app/.krb5/krb5.conf'
+      KRB5CCNAME: '/home/vcap/app/.krb5/krb5cc'
+      KRB5_KTNAME: '/home/vcap/app/.krb5/service.keytab'
+      KRB5_CLIENT_KTNAME: '/home/vcap/app/.krb5/service.keytab'
+      URLS: http://0.0.0.0:8080
+      SidecarUrl: http://sidecar:9090
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__SqlServer: 'Server=dc1.macsux.com;Database=master;Trusted_Connection=True;TrustServerCertificate=True'
+    volumes:
+      - 'krb5:/home/vcap/app/.krb5'
+  sidecar:
+    image: krbsidecar
+    build:
+      context: ../../src
+      dockerfile: ./KerberosSidecar/Dockerfile
+    ports:
+      - '9090:9090'
+    env_file:
+      - secrets.env
+# create a secrets.env file with values for your environment like this:
+#      KRB_SERVICE_ACCOUNT=iwaclient@macsux.com
+#      KRB_PASSWORD=P@ssw0rd
+#      KRB_KDC=dc1.macsux.com
+    environment:
+      KRB5_CONFIG: '/home/vcap/app/.krb5/krb5.conf'
+      KRB5CCNAME: '/home/vcap/app/.krb5/krb5cc'
+      KRB5_KTNAME: '/home/vcap/app/.krb5/service.keytab'
+      KRB5_CLIENT_KTNAME: '/home/vcap/app/.krb5/service.keytab'
+      ASPNETCORE_ENVIRONMENT: Development
+    volumes:
+      - 'krb5:/home/vcap/app/.krb5'
+volumes:
+  krb5: null

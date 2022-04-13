@@ -5,6 +5,7 @@ using static Nuke.Common.Tools.CloudFoundry.CloudFoundryTasks;
 using Newtonsoft.Json.Linq;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.CloudFoundry;
+using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
@@ -35,6 +36,8 @@ partial class Build
     [Parameter("User current cf target (org/space)")]
     readonly bool UseCurrentCfTarget;
     readonly string TestAppName = "KerberosDemo";
+
+    string SampleAppUrl = "http://localhost:8080";
     
     Target CfLogin => _ => _
         .Requires(() => CfUsername, () => CfPassword, () => CfApiEndpoint)
@@ -92,7 +95,7 @@ partial class Build
 
     Target DeploySampleApp => _ => _
         .DependsOn(SetCfTargetSpace, EnsureCfTarget)
-        .After(InstallBuildpack)
+        .After(PublishSample, InstallBuildpack)
         .Requires(
             () => IntegrationTestKerbKdc, 
             () => IntegrationTestKerbUser, 
@@ -125,11 +128,9 @@ partial class Build
                 .SetMemory("512M")
                 .EnableRandomRoute());
         });
-    Target Test => _ => _
+    Target DetermineSampleAppUrl => _ => _
         .DependsOn(EnsureCfTarget)
-        .After(Publish)
-        .After(InstallBuildpack)
-        .After(DeploySampleApp)
+        .Before(Test)
         .Executes(() =>
         {
             
@@ -139,14 +140,44 @@ partial class Build
                 .DisableProcessLogOutput())
                 .StdToJson();
             var appUrl = routesJson.SelectToken("$..url").Value<string>();
-            appUrl = $"https://{appUrl}";
-            DotNetTest(c => c
-                .SetProjectFile(Solution.GetProject("KerberosBuildpack.Tests").Path)
-                .AddProcessEnvironmentVariable("SampleAppUrl", appUrl)
-            );
-
+            SampleAppUrl = $"https://{appUrl}";
         });
 
-    Target TestFull => _ => _
-        .DependsOn(Publish, InstallBuildpack, DeploySampleApp, Test);
+    Target Test => _ => _
+        .After(Publish)
+        .After(InstallBuildpack)
+        .After(DeploySampleApp)
+        .After(DockerComposeUp)
+        .Before(DockerComposeDown)
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile(Solution.GetProject("KerberosBuildpack.Tests").Path)
+                .AddProcessEnvironmentVariable("SampleAppUrl", SampleAppUrl)
+            );
+        });
+
+    Target DockerComposeUp => _ => _
+        .Unlisted()
+        .Executes(() =>
+        {
+            using var process = ProcessTasks.StartProcess("docker-compose", "up -d", RootDirectory / "sample" / "KerberosDemo");
+            process.AssertZeroExitCode();
+        });
+
+    Target DockerComposeDown => _ => _
+        .Unlisted()
+        .Executes(() =>
+        {
+            using var process = ProcessTasks.StartProcess("docker-compose", "down -v", RootDirectory / "sample" / "KerberosDemo");
+            process.AssertZeroExitCode();
+        });
+
+    Target IntegrationTestCf => _ => _
+        .DependsOn(Publish, InstallBuildpack, DeploySampleApp, DetermineSampleAppUrl, Test);
+
+    Target IntegrationTestDocker => _ => _
+        .DependsOn(DockerComposeUp, Test, DockerComposeDown);
+
+
 }

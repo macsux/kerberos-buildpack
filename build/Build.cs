@@ -31,6 +31,7 @@ using FileMode = System.IO.FileMode;
 using ZipFile = System.IO.Compression.ZipFile;
 using Credentials = Octokit.Credentials;
 using Newtonsoft.Json.Linq;
+using Nuke.Common.CI.GitHubActions;
 using Project = Octokit.Project;
 using static Nuke.Common.Tools.CloudFoundry.CloudFoundryTasks;
 // ReSharper disable TemplateIsNotCompileTimeConstantProblem
@@ -38,6 +39,10 @@ using static Nuke.Common.Tools.CloudFoundry.CloudFoundryTasks;
 [assembly: InternalsVisibleTo("KerberosBuildpackTests")]
 [CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
+[GitHubActions("CI", GitHubActionsImage.Ubuntu2004, 
+    InvokedTargets = new []{nameof(IntegrationTestCf)}, 
+    On = new [] {GitHubActionsTrigger.Push},
+    PublishArtifacts = true)]
 partial class Build : NukeBuild
 {
     /// Support plugins are available for:
@@ -77,12 +82,12 @@ partial class Build : NukeBuild
             .Select(x => x.Url.Contains("github.com"))
             .FirstOrDefault();
     bool IsCurrentBranchCommitted() => !GitRepository.RetrieveStatus().IsDirty;
-
+    
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "tests";
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
-    
+
     string[] LifecycleHooks = {"detect", "supply", "release", "finalize"};
 
     Target Clean => _ => _
@@ -93,11 +98,27 @@ partial class Build : NukeBuild
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
         });
-    
+
+    Target CleanArtifacts => _ => _
+        .Executes(() =>
+        {
+            EnsureCleanDirectory(ArtifactsDirectory);
+        });
+
+    Target Restore => _ => _
+        .Executes(() =>
+        {
+            DotNetRestore(c => c
+                .AddProperty("nodeReuse", "false")
+                .AddProperty("UseSharedCompilation", "false")
+                .SetProjectFile(Solution));
+        });
+
     Target Publish => _ => _
         .Description("Packages buildpack in Cloud Foundry expected format into /artifacts directory")
         .After(Clean)
-        .DependsOn(PublishSample, Restore)
+        .DependsOn(CleanArtifacts, PublishSample, Restore)
+        .Produces(ArtifactsDirectory / "*.zip")
         .Executes(() =>
         {
             var workDirectory = TemporaryDirectory / "pack";
@@ -112,6 +133,8 @@ partial class Build : NukeBuild
 
             DotNetPublish(s => s
                 .SetProject(BuildpackSolution)
+                .AddProperty("nodeReuse", "false")
+                .AddProperty("UseSharedCompilation", "false")
                 .SetConfiguration(Configuration)
                 .SetFramework(Framework)
                 .SetRuntime(Runtime)
@@ -143,13 +166,7 @@ partial class Build : NukeBuild
             MakeFilesInZipUnixExecutable(tempZipFile);
             CopyFileToDirectory(tempZipFile, ArtifactsDirectory, FileExistsPolicy.Overwrite);
             Serilog.Log.Information(ArtifactsDirectory / PackageZipName);
-        });
-
-    Target Restore => _ => _
-        .Executes(() =>
-        {
-            DotNetRestore(c => c
-                .SetProjectFile(Solution));
+            
         });
 
     Target PublishSample => _ => _
@@ -159,6 +176,9 @@ partial class Build : NukeBuild
             EnsureExistingDirectory(ArtifactsDirectory);
             var demoProjectDirectory = RootDirectory / "sample" / "KerberosDemo";
             DotNetPublish(c => c
+                .AddProperty("nodeReuse", "false")
+                .AddProperty("UseSharedCompilation", "false")
+                .EnableNoRestore()
                 .SetProject(demoProjectDirectory / "KerberosDemo.csproj")
                 .SetConfiguration(Configuration));
             var publishFolder = demoProjectDirectory / "bin" / Configuration / "net6.0" / "publish";
@@ -237,8 +257,7 @@ partial class Build : NukeBuild
                 DotNetRun(s => s
                     .SetProjectFile(Solution.GetProject("Lifecycle.Detect").Path)
                     .SetApplicationArguments(ApplicationDirectory)
-                    .SetConfiguration(Configuration)
-                    .SetFramework("netcoreapp3.1"));
+                    .SetConfiguration(Configuration));
                 Serilog.Log.Information("Detect returned 'true'");
             }
             catch (ProcessException)
@@ -262,8 +281,7 @@ partial class Build : NukeBuild
             DotNetRun(s => s
                 .SetProjectFile(Solution.GetProject("Lifecycle.Supply").Path)
                 .SetApplicationArguments($"{app} {cache} {app} {deps} {index}")
-                .SetConfiguration(Configuration)
-                .SetFramework("netcoreapp3.1"));
+                .SetConfiguration(Configuration));
             Serilog.Log.Information($"Buildpack applied. Droplet is available in {home}");
 
         });

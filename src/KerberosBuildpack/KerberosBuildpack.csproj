@@ -12,6 +12,10 @@
     <PackageReference Include="CommandDotNet" Version="3.0.2" />
 <!--    <PackageReference Include="Kerberos.NET" Version="4.5.124" />-->
     <PackageReference Include="NMica.Utils" Version="1.0.1" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.4.255">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 <!--  <ItemGroup>-->
@@ -23,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="startsidecar.sh">
+    <None Update="start.sh">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

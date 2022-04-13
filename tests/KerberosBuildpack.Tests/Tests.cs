@@ -48,18 +48,11 @@ public class Tests
     private HttpClient _client;
 
     [Fact]
-    public async Task HasCorrectEnvVars()
-    {
-        var envVars =  await _client.GetFromJsonAsync<Dictionary<string,string>>("env");
-        envVars.Should().Contain("KRB5_CONFIG", "/home/vcap/app/.krb5/krb5.conf");
-        envVars.Should().Contain("KRB5CCNAME", "/home/vcap/app/.krb5/krb5cc");
-        envVars.Should().Contain("KRB5_KTNAME", "/home/vcap/app/.krb5/service.keytab");
-    }
-    
-    [Fact]
     public async Task Krb5ConfFileIsValid()
     {
-        var confFileLocation = "/home/vcap/app/.krb5/krb5.conf";
+        var envVars =  await _client.GetFromJsonAsync<Dictionary<string,string>>("env");
+        envVars.Should().NotBeNull().And.ContainKey("KRB5_CONFIG");
+        var confFileLocation = envVars!["KRB5_CONFIG"];
         var fileBytes = await ReadRemoteFile(confFileLocation);
         fileBytes.Should().NotBeEmpty();
         var confFile = Encoding.Default.GetString(fileBytes);
@@ -79,7 +72,9 @@ public class Tests
     [Fact]
     public async Task TicketCacheExists()
     {
-        var ticketCacheLocation = "/home/vcap/app/.krb5/krb5cc";
+        var envVars =  await _client.GetFromJsonAsync<Dictionary<string,string>>("env");
+        envVars.Should().NotBeNull().And.ContainKey("KRB5CCNAME");
+        var ticketCacheLocation = envVars!["KRB5CCNAME"];
         await ReadRemoteFile(ticketCacheLocation);
     }
     
@@ -87,7 +82,9 @@ public class Tests
     public async Task KeytabValid()
     {
         // download and parse keytab locally
-        var keytabLocation = "/home/vcap/app/.krb5/service.keytab";
+        var envVars =  await _client.GetFromJsonAsync<Dictionary<string,string>>("env");
+        envVars.Should().NotBeNull().And.ContainKey("KRB5_KTNAME");
+        var keytabLocation = envVars!["KRB5_KTNAME"];
         var keytabBytes = await ReadRemoteFile(keytabLocation);
         keytabBytes.Should().NotBeEmpty();
         var keytab = new KeyTable(keytabBytes);
@@ -122,6 +119,16 @@ public class Tests
         var body = await response.Content.ReadAsStringAsync();
         response.IsSuccessStatusCode.Should().BeTrue(body);
         _output.WriteLine(body);
+    }
+    
+    [Fact]
+    public async Task AuthenticateUser()
+    {
+        var ticket = await _client.GetStringAsync("ticket");
+        var response = await _client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "/user") { Headers = { {"Authorization", $"Negotiate {ticket}"} }});
+        var responseText = await response.Content.ReadAsStringAsync();
+        response.IsSuccessStatusCode.Should().BeTrue(responseText);
+        _output.WriteLine(responseText);
     }
     
 

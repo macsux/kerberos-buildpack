@@ -25,6 +25,10 @@ webHostBuilder.Configuration
     .AddYamlFile($"appsettings.{webHostBuilder.Environment.EnvironmentName}.yaml", optional: true, reloadOnChange: true)
     .AddCloudFoundry();
 var services = webHostBuilder.Services;
+services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.WriteIndented = webHostBuilder.Environment.IsDevelopment();
+});;
 services.AddOptions<KerberosOptions>()
     .Configure(c =>
     {
@@ -149,6 +153,8 @@ app.UseRouting();
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapHealthChecks("/health/ready", new HealthCheckOptions().WithJsonDetails());
+    endpoints.MapControllers();
+
 });
 app.Logger.LogInformation("Kerberos sidecar started....");
 await app.RunAsync();

@@ -1,0 +1,16 @@
+﻿<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Docker-compose sidecar" type="docker-deploy" factoryName="docker-compose.yml" server-name="Docker">
+    <deployment type="docker-compose.yml">
+      <settings>
+        <option name="envFilePath" value="" />
+        <option name="removeVolumesOnComposeDown" value="true" />
+        <option name="commandLineOptions" value="--build" />
+        <option name="sourceFilePath" value="sample/KerberosDemo/docker-compose.yml" />
+        <option name="upRenewAnonVolumes" value="true" />
+      </settings>
+    </deployment>
+    <method v="2">
+      <option name="ToolBeforeRunTask" enabled="true" actionId="Tool_External Tools_docker-compose down -v" />
+    </method>
+  </configuration>
+</component>

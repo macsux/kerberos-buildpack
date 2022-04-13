@@ -113,18 +113,23 @@
             "enum": [
               "CfLogin",
               "Clean",
+              "CleanArtifacts",
               "DeploySampleApp",
               "Detect",
+              "DetermineSampleAppUrl",
+              "DockerComposeDown",
+              "DockerComposeUp",
               "EnsureCfTarget",
               "InstallBuildpack",
+              "IntegrationTestCf",
+              "IntegrationTestDocker",
               "Publish",
               "PublishSample",
               "Release",
               "Restore",
               "SetCfTargetSpace",
               "Supply",
-              "Test",
-              "TestFull"
+              "Test"
             ]
           }
         },
@@ -140,18 +145,23 @@
             "enum": [
               "CfLogin",
               "Clean",
+              "CleanArtifacts",
               "DeploySampleApp",
               "Detect",
+              "DetermineSampleAppUrl",
+              "DockerComposeDown",
+              "DockerComposeUp",
               "EnsureCfTarget",
               "InstallBuildpack",
+              "IntegrationTestCf",
+              "IntegrationTestDocker",
               "Publish",
               "PublishSample",
               "Release",
               "Restore",
               "SetCfTargetSpace",
               "Supply",
-              "Test",
-              "TestFull"
+              "Test"
             ]
           }
         },

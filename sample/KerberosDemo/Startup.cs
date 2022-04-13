@@ -19,8 +19,11 @@ namespace KerberosDemo
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly IHostEnvironment _environment;
+
+        public Startup(IConfiguration configuration, IHostEnvironment environment)
         {
+            _environment = environment;
             Configuration = configuration;
         }
 
@@ -29,19 +32,6 @@ namespace KerberosDemo
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // var serviceAccount = Environment.GetEnvironmentVariable("KRB_SERVICE_ACCOUNT");
-            // if (services == null)
-            // {
-            //     throw new Exception("KRB_SERVICE_ACCOUNT must be set");
-            // }
-            // var password = Environment.GetEnvironmentVariable("KRB_PASSWORD")!;
-            // if (password == null)
-            // {
-            //     throw new Exception("KRB_PASSWORD must be set");
-            // }
-            // var kdcStr = Environment.GetEnvironmentVariable("KRB5_KDC");
-            // var domain = serviceAccount.Split("@").Last();
-            // var ldapAddress = kdcStr != null ? kdcStr.Split(";").First() : domain;
             services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
                 .AddNegotiate();
                 // .AddNegotiate(c => c
@@ -55,7 +45,10 @@ namespace KerberosDemo
                 //         ldap.LdapConnection.AutoBind = true;
                         // ldap.LdapConnection.Bind();
                 //     }));
-            services.AddControllers();
+            services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.WriteIndented = _environment.IsDevelopment();
+            });;;
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "KerberosDemo", Version = "v1" });

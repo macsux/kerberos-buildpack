@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
+using KerberosDemo.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -26,42 +27,46 @@ namespace KerberosDemo.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IConfiguration _configuration;
+        private readonly HttpClient _sidecarClient;
 
         public HomeController(ILogger<HomeController> logger, IConfiguration configuration)
         {
             _logger = logger;
             _configuration = configuration;
+            _sidecarClient =  new HttpClient()
+            {
+                BaseAddress = new Uri(_configuration.GetValue<string>("SidecarUrl"))
+            };
         }
 
+
         [HttpGet("/user")]
-        public ActionResult<string> AuthenticateUser(bool forceAuth)
+        public ActionResult<UserDetails> AuthenticateUser(bool forceAuth)
         {
             
             var identity = (ClaimsIdentity)User.Identity!;
-            var sb = new StringBuilder();
-
             if (!identity.IsAuthenticated)
             {
                 if(forceAuth)
                     return Challenge();
-                sb.AppendLine("Not logged in");
+                
                 if (!Request.Headers.TryGetValue("Authorization", out var authorizationHeader))
                 {
-                    sb.AppendLine("Authorization header not included. Call with '?forceAuth=true' to force SPNEGO exchange by the browser");
+                    return base.Unauthorized("Authorization header not included. Call with '?forceAuth=true' to force SPNEGO exchange by the browser");
                 }
 
-                return sb.ToString();
+                return Unauthorized("Not logged in.");
             }
 
-            sb.AppendLine($"User: {identity.Name}");
-            sb.AppendLine("Claims: ");
-            foreach (var claim in identity.Claims)
+            var user = new UserDetails()
             {
-                sb.AppendLine($"  {claim.Type}: {claim.Value}");
-            }
-
-            return sb.ToString();
+                Name = identity.Name,
+                Claims = identity.Claims.Select(x => new ClaimSummary { Type = x.Type, Value = x.Value }).ToList()
+            };
+            return user;
         }
+
+
         /// <summary>
         /// Test IWA connection
         /// Things needed to get to work on Linux:
@@ -89,33 +94,25 @@ namespace KerberosDemo.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("/sql")]
-        public ActionResult<string> SqlTest()
+        public ActionResult<SqlServerInfo> SqlTest(string connectionString)
         {
-            var sb = new StringBuilder();
-            var connectionString = _configuration.GetConnectionString("SqlServer");
+            connectionString ??= _configuration.GetConnectionString("SqlServer");
             if (connectionString == null)
             {
-                return @"Connection string not set. Set 'ConnectionStrings__SqlServer' environmental variable";
+                return StatusCode(500, "Connection string not set. Set 'ConnectionStrings__SqlServer' environmental variable");
             }
 
-            Console.WriteLine("About to run query");
-            sb.AppendLine($"Connection String: {connectionString}");
             var sqlClient = new SqlConnection(connectionString);
             try
             {
                 var serverInfo = sqlClient.QuerySingle<SqlServerInfo>("SELECT @@servername AS Server, @@version as Version, DB_NAME() as [Database]");
-                Console.WriteLine("Ran query");
-                sb.AppendLine($"Successfully connected to {serverInfo.Server}");
-                sb.AppendLine(serverInfo.Version);
+                serverInfo.ConnectionString = connectionString;
+                return Ok(serverInfo);
             }
             catch (Exception ex)
             {
-                sb.AppendLine("Cannot connect to SQL Server");
-                sb.AppendLine(ex.ToString());
-                
+                return StatusCode(500, ex.ToString());
             }
-            
-            return sb.ToString();
         }
         
         [HttpGet("/getfile")]
@@ -153,7 +150,7 @@ namespace KerberosDemo.Controllers
         public async Task<string> SidecarHealth()
         {
             var client = new HttpClient();
-            var healthResult = await client.GetStringAsync("http://localhost:9090/health/ready");
+            var healthResult = await _sidecarClient.GetStringAsync("health/ready");
             return healthResult;
         }
         
@@ -202,6 +199,9 @@ q";
         {
             return Environment.GetEnvironmentVariables().Cast<DictionaryEntry>().ToDictionary(x => x.Key.ToString(), x => x.Value.ToString());
         }
+
+
+
         
         [HttpGet("/run")]
         public async Task<string> Run(string command, string input = null)
@@ -251,12 +251,12 @@ q";
                 return e.ToString();
             }
         }
-    }
+        
 
-    public class SqlServerInfo
-    {
-        public string Server { get; set; }
-        public string Database { get; set; }
-        public string Version { get; set; }
+        [HttpGet("/ticket")]
+        public async Task<ActionResult<string>> GetTicket(string spn)
+        {
+            return await _sidecarClient.GetStringAsync($"ticket?spn={spn}");
+        }
     }
 }

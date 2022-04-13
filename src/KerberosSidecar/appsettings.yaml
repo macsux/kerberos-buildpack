@@ -2,4 +2,4 @@
 Logging:
   LogLevel:
     Default: Information
-    Microsoft.Hosting.Lifetime: Error
+    Microsoft.Hosting.Lifetime: Information
