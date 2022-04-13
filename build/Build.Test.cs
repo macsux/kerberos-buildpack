@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 using Nuke.Common;
 using static Nuke.Common.Tools.CloudFoundry.CloudFoundryTasks;
 using Newtonsoft.Json.Linq;
@@ -38,10 +41,19 @@ partial class Build
     readonly string TestAppName = "KerberosDemo";
 
     string SampleAppUrl = "http://localhost:8080";
-    
+
+    Target Env => _ => _
+        .Executes(() =>
+        {
+            foreach (var entry in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>())
+            {
+                Serilog.Log.Information($"{entry.Key}:{entry.Value}");
+            }
+        });
     Target CfLogin => _ => _
-        .Requires(() => CfUsername, () => CfPassword, () => CfApiEndpoint)
+        .Requires(() => CfUsername, () => CfPassword, () => CfApiEndpoint )
         .OnlyWhenStatic(() => !UseCurrentCfLogin)
+        .After(Publish, PublishSample)
         .Unlisted()
         .Executes(() =>
         {
@@ -52,7 +64,7 @@ partial class Build
         });
     Target SetCfTargetSpace => _ => _
         .OnlyWhenStatic(() => !UseCurrentCfTarget)
-        .After(CfLogin)
+        .After(CfLogin, Publish, PublishSample)
         .Executes(() =>
         {
             CloudFoundryTarget(c => c
@@ -65,6 +77,7 @@ partial class Build
         });
 
     Target EnsureCfTarget => _ => _
+        .After(Publish)
         .DependsOn(CfLogin, SetCfTargetSpace);
     Target InstallBuildpack => _ => _
         .DependsOn(Publish, EnsureCfTarget)
@@ -131,6 +144,7 @@ partial class Build
     Target DetermineSampleAppUrl => _ => _
         .DependsOn(EnsureCfTarget)
         .Before(Test)
+        .After(DeploySampleApp)
         .Executes(() =>
         {
             

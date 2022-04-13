@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="start.sh">
+    <None Update="startsidecar.sh">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

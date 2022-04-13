@@ -42,7 +42,19 @@ using static Nuke.Common.Tools.CloudFoundry.CloudFoundryTasks;
 [GitHubActions("CI", GitHubActionsImage.Ubuntu2004, 
     InvokedTargets = new []{nameof(IntegrationTestCf)}, 
     On = new [] {GitHubActionsTrigger.Push},
-    PublishArtifacts = true)]
+    PublishArtifacts = true, 
+    ImportSecrets = new[]
+    {
+        nameof(CfUsername), 
+        nameof(CfPassword),
+        nameof(CfApiEndpoint), 
+        nameof(CfOrg), 
+        nameof(CfSpace), 
+        nameof(IntegrationTestKerbKdc),
+        nameof(IntegrationTestKerbUser),
+        nameof(IntegrationTestKerbPassword),
+        nameof(IntegrationTestSqlConnectionString),
+    })]
 partial class Build : NukeBuild
 {
     /// Support plugins are available for:
@@ -117,8 +129,9 @@ partial class Build : NukeBuild
     Target Publish => _ => _
         .Description("Packages buildpack in Cloud Foundry expected format into /artifacts directory")
         .After(Clean)
+        .Before(EnsureCfTarget)
         .DependsOn(CleanArtifacts, PublishSample, Restore)
-        .Produces(ArtifactsDirectory / "*.zip")
+        .Produces(ArtifactsDirectory)
         .Executes(() =>
         {
             var workDirectory = TemporaryDirectory / "pack";
@@ -170,7 +183,7 @@ partial class Build : NukeBuild
         });
 
     Target PublishSample => _ => _
-        .DependsOn(Restore)
+        .DependsOn(CleanArtifacts, Restore)
         .Executes(() =>
         {
             EnsureExistingDirectory(ArtifactsDirectory);
@@ -189,6 +202,7 @@ partial class Build : NukeBuild
             var artifactZip = ArtifactsDirectory / SampleZipName;
             DeleteFile(artifactZip);
             ZipFile.CreateFromDirectory(publishFolder, artifactZip, CompressionLevel.NoCompression, false);
+            Serilog.Log.Logger.Information($"Artifact: -> {artifactZip}");
         });
     
     Target Release => _ => _
