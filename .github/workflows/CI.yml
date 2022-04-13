@@ -5,7 +5,7 @@
 #
 #     - To turn off auto-generation set:
 #
-#         [GitHubActions (AutoGenerate = false)]
+#         [GitHubActionsEx (AutoGenerate = false)]
 #
 #     - To trigger manual generation invoke:
 #
@@ -43,7 +43,7 @@ jobs:
           IntegrationTestKerbUser: ${{ secrets.INTEGRATION_TEST_KERB_USER }}
           IntegrationTestKerbPassword: ${{ secrets.INTEGRATION_TEST_KERB_PASSWORD }}
           IntegrationTestSqlConnectionString: ${{ secrets.INTEGRATION_TEST_SQL_CONNECTION_STRING }}
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v3
         with:
           name: artifacts
-          path: artifacts
+          path: artifacts/*.zip

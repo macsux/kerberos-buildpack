@@ -39,7 +39,8 @@ using static Nuke.Common.Tools.CloudFoundry.CloudFoundryTasks;
 [assembly: InternalsVisibleTo("KerberosBuildpackTests")]
 [CheckBuildProjectConfigurations]
 [UnsetVisualStudioEnvironmentVariables]
-[GitHubActions("CI", GitHubActionsImage.Ubuntu2004, 
+[GitHubActionsEx("CI", GitHubActionsImage.Ubuntu2004, 
+    AutoGenerate = false,
     InvokedTargets = new []{nameof(IntegrationTestCf)}, 
     On = new [] {GitHubActionsTrigger.Push},
     PublishArtifacts = true, 
@@ -131,7 +132,7 @@ partial class Build : NukeBuild
         .After(Clean)
         .Before(EnsureCfTarget)
         .DependsOn(CleanArtifacts, PublishSample, Restore)
-        .Produces(ArtifactsDirectory)
+        .Produces(ArtifactsDirectory / "*.zip")
         .Executes(() =>
         {
             var workDirectory = TemporaryDirectory / "pack";
