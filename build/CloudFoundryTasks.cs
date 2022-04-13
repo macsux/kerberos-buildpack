@@ -12,6 +12,16 @@ namespace Nuke.Common.Tools.CloudFoundry
 {
     public static partial class CloudFoundryTasks
     {
+        static CloudFoundryTasks()
+        {
+            CloudFoundryLogger = (type, output) =>
+            {
+                if (type == OutputType.Std || output == "Instances starting...")
+                    Serilog.Log.Debug(output);
+                else
+                    Serilog.Log.Error(output);
+            };
+        }
         public static string GetToolPath()
         {
             return ToolPathResolver.GetPackageExecutable($"CloudFoundry.CommandLine.{CurrentOsRid}", IsWindows ? "cf.exe" : "cf");
