@@ -148,6 +148,7 @@ partial class Build : NukeBuild
             DotNetPublish(s => s
                 .SetProject(BuildpackSolution)
                 .AddProperty("nodeReuse", "false")
+                .AddProperty("MSBuildWarningsAsMessages", "MSB3026")
                 .AddProperty("UseSharedCompilation", "false")
                 .SetConfiguration(Configuration)
                 .SetFramework(Framework)
