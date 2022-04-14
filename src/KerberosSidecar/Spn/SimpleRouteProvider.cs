@@ -11,6 +11,6 @@ public class SimpleRouteProvider : IRouteProvider
         _options = options;
     }
 
-    public Task<IReadOnlyCollection<Uri>> GetRoutes() => 
+    public Task<IReadOnlyCollection<Uri>> GetRoutes(CancellationToken cancellationToken = default) => 
         Task.FromResult((IReadOnlyCollection<Uri>)_options.CurrentValue.Routes.Select(x => new Uri(x)).ToList().AsReadOnly());
 }

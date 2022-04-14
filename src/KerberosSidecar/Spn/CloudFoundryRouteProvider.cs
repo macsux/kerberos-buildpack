@@ -12,7 +12,7 @@ public class CloudFoundryRouteProvider : IRouteProvider
         _configuration = configuration;
     }
 
-    public Task<IReadOnlyCollection<Uri>> GetRoutes()
+    public Task<IReadOnlyCollection<Uri>> GetRoutes(CancellationToken cancellationToken = default)
     {
         var vcapApplication = _configuration.GetValue<string>("VCAP_APPLICATION");
         if (vcapApplication == null)

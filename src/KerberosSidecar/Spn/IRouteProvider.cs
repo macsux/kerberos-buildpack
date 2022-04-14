@@ -2,5 +2,5 @@
 
 public interface IRouteProvider
 {
-    public Task<IReadOnlyCollection<Uri>> GetRoutes();
+    public Task<IReadOnlyCollection<Uri>> GetRoutes(CancellationToken cancellationToken);
 }

@@ -53,7 +53,7 @@ public class KerberosWorker : BackgroundService
         {
             await CreateMitKerberosKrb5Config();
             await CreateMitKerberosKeytab();
-            await EnsureTgt();
+            await EnsureTgt(true);
             await _spnProvider.EnsureSpns(_cancellationToken);
             _tgtHealthCheck.LastException = null;
         }
@@ -88,12 +88,11 @@ public class KerberosWorker : BackgroundService
     /// <summary>
     /// Authenticates the principal and populates ticket cache
     /// </summary>
-    private async Task EnsureTgt()
+    private async Task EnsureTgt(bool isInitial)
     {
 
         try
         {
-
             var ticketCache = (Krb5TicketCache)_options.CurrentValue.KerberosClient.Cache;
             var tgt = ticketCache.Krb5Cache.Credentials.FirstOrDefault(x => x.Server.Name.Contains("krbtgt"));
             var credentials = await _credentialFactory.Get(_options.CurrentValue, _cancellationToken);
@@ -109,6 +108,10 @@ public class KerberosWorker : BackgroundService
                 await _options.CurrentValue.KerberosClient.RenewTicket();
                 _logger.LogDebug("Service successfully renewed TGT ticket");
             }
+            else if (isInitial)
+            {
+                _logger.LogInformation("Existing valid TGT ticket for {Principal} was found in ticket cache", credentials.UserName);
+            }
 
             _tgtHealthCheck.LastException = null;
             
@@ -116,6 +119,7 @@ public class KerberosWorker : BackgroundService
         catch (Exception e)
         {
             _tgtHealthCheck.LastException = e;
+            _logger.LogError(e, "Failure obtaining TGT");
         }
     }
 
@@ -158,7 +162,7 @@ public class KerberosWorker : BackgroundService
         await SetupMitKerberos();
         while (!stoppingToken.IsCancellationRequested)
         {
-            await EnsureTgt();
+            await EnsureTgt(false);
             await Task.Delay(1000, stoppingToken);
         }
     }

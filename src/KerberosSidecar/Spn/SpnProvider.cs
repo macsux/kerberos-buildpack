@@ -16,7 +16,7 @@ public class SpnProvider
     public Task<List<string>> GetSpnsForAppRoutes(CancellationToken cancellationToken = default) => GetSpnsForAppRoutes("http", cancellationToken);
     public async Task<List<string>> GetSpnsForAppRoutes(string serviceType, CancellationToken cancellationToken = default)
     {
-        var routes = await _routeProvider.GetRoutes();
+        var routes = await _routeProvider.GetRoutes(cancellationToken);
         var spns = routes.Select(route => $"{serviceType}/{route.Host}").ToList();
         return spns;
     }
