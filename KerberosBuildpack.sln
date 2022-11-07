@@ -34,6 +34,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3EAACEF7
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KerberosBuildpack.Tests", "tests\KerberosBuildpack.Tests\KerberosBuildpack.Tests.csproj", "{7E2C63B4-F70F-4136-A640-A4D4AE1570EB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TapConventionWebhook", "src\TapConventionWebhook\TapConventionWebhook.csproj", "{70144943-6BC7-4473-889F-C8289C20CB0F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -74,6 +76,10 @@ Global
 		{7E2C63B4-F70F-4136-A640-A4D4AE1570EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E2C63B4-F70F-4136-A640-A4D4AE1570EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E2C63B4-F70F-4136-A640-A4D4AE1570EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70144943-6BC7-4473-889F-C8289C20CB0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70144943-6BC7-4473-889F-C8289C20CB0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70144943-6BC7-4473-889F-C8289C20CB0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70144943-6BC7-4473-889F-C8289C20CB0F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -92,5 +98,6 @@ Global
 		{6D05C4AD-EE88-4359-8BCD-02B5C32CB26C} = {7BF14C44-4B4C-4973-B7AD-1C2D45242AE2}
 		{467A1183-88A7-4029-9B71-3A55B30B7E47} = {D294BC31-1333-4552-A401-AE1B180E3CF5}
 		{7E2C63B4-F70F-4136-A640-A4D4AE1570EB} = {3EAACEF7-0379-4971-B1F7-EBE5E6420501}
+		{70144943-6BC7-4473-889F-C8289C20CB0F} = {7BF14C44-4B4C-4973-B7AD-1C2D45242AE2}
 	EndGlobalSection
 EndGlobal

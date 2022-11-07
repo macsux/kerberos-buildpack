@@ -1,0 +1,5 @@
+---
+Logging:
+  LogLevel:
+    Default: Information
+    Microsoft.Hosting.Lifetime: Information
