@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
 namespace TapConventionWebhook.Controllers;
+//https://raw.githubusercontent.com/vmware-tanzu/cartographer-conventions/main/api/openapi-spec/conventions-server.yaml
 
 public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
 {
