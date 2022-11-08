@@ -1,4 +1,4 @@
-﻿namespace TapConventionWebhook.Controllers;
+﻿namespace TapConventionWebhook.Models;
 
 /// <summary>
 /// status type used to represent the current status of the context retrieved by the request.
@@ -7,7 +7,7 @@
 public partial class PodConventionContextStatus
 {
     [Newtonsoft.Json.JsonProperty("template", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public PodTemplateSpec? Template { get; set; }
+    public k8s.Models.V1PodTemplateSpec? Template { get; set; }
 
     /// <summary>
     /// a list of string with names of conventions to be applied

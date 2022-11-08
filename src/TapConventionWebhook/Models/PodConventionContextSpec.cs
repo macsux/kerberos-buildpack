@@ -1,4 +1,4 @@
-﻿namespace TapConventionWebhook.Controllers;
+﻿namespace TapConventionWebhook.Models;
 
 /// <summary>
 /// a wrapper of the PodTemplateSpec and list of ImageConfigs provided in the request body of the server.
@@ -7,7 +7,7 @@
 public partial class PodConventionContextSpec
 {
     [Newtonsoft.Json.JsonProperty("template", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public PodTemplateSpec? Template { get; set; }
+    public k8s.Models.V1PodTemplateSpec? Template { get; set; }
 
     /// <summary>
     /// an array of imageConfig objects with each image configuration object holding the name of the image, the BOM, and the OCI image

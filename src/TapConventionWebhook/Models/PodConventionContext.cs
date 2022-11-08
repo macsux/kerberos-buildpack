@@ -1,4 +1,4 @@
-﻿namespace TapConventionWebhook.Controllers;
+﻿namespace TapConventionWebhook.Models;
 
 /// <summary>
 /// A wrapper for the PodConventionContextSpec and the PodConventionContextStatus which is the structure used for both requests 
