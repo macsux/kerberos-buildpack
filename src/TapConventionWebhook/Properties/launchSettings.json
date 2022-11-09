@@ -8,7 +8,8 @@
       "launchUrl": "swagger",
       "applicationUrl": "http://localhost:8080",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "SIDECAR_IMAGE": "winterfell2.azurecr.io/tap/sc/kerberos-sidecar:latest"
       }
     }
   }
