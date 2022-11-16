@@ -6,7 +6,7 @@
 ```bash
 
 tanzu apps workload apply --file config/workload.yaml  \
---namespace cody \
+--namespace dpfeffer \
 --source-image winterfell2.azurecr.io/supply-chain-basic/kerberos-convention-server-source \
 --local-path . \
 --tail 

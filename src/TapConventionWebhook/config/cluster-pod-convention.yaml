@@ -5,4 +5,4 @@ metadata:
 spec:
   webhook:
     clientConfig:
-      url: https://kerberos-convention-server.cody.full.tanzu-azure-lab.winterfell.fun/webhook
+      url: https://kerberos-convention-server.dpfeffer.dotnet-tap.tanzu-azure-lab.winterfell.fun/webhook

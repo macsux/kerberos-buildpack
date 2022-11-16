@@ -6,7 +6,7 @@
       "dotnetRunMessages": true,
       "launchBrowser": false,
       "launchUrl": "swagger",
-      "applicationUrl": "http://localhost:8080",
+      "applicationUrl": "http://localhost:5063;https://localhost:7063",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "SIDECAR_IMAGE": "winterfell2.azurecr.io/tap/sc/kerberos-sidecar:latest"
