@@ -1,3 +1,4 @@
+using k8s.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using TapConventionWebhook.Models;
@@ -6,6 +7,11 @@ using Newtonsoft.Json.Linq;
 namespace TapConventionWebhook.Controllers;
 //https://raw.githubusercontent.com/vmware-tanzu/cartographer-conventions/main/api/openapi-spec/conventions-server.yaml
 
+public class TestMe
+{
+    public string? Name { get; set; }
+}
+
 public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
 {
     private readonly ILogger<WebHookController> _log;
@@ -13,6 +19,12 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
     public WebHookController(ILogger<WebHookController> log)
     {
         _log = log;
+    }
+
+    [HttpPost("hello")]
+    public Task<TestMe> Hello([FromBody]TestMe input)
+    {
+        return Task.FromResult(input);
     }
 
     /// <remarks>
@@ -25,165 +37,103 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
     /// </remarks>
     /// <returns>expected response once all conventions are applied successfully.</returns>
     [HttpPost("webhook")]
-#pragma warning disable CS1998
-    public async Task<String> Webhook()
-#pragma warning restore CS1998
+
+    public PodConventionContext Webhook([FromBody] PodConventionContext context)
     {
-        var body = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
-        var bodyObject = JObject.Parse(body);
-
-        // Copy spec.template to status.template
-        bodyObject!["status"]!["template"] = bodyObject!["spec"]!["template"]!.DeepClone();
-
-        if (bodyObject?["spec"]?["template"]?["metadata"]?["labels"]?["kerberos"] != null)
+        context.Status ??= new PodConventionContextStatus();
+        context.Spec ??= new PodConventionContextSpec();
+        context.Spec!.Template ??= new V1PodTemplateSpec();
+        context.Status.Template = JObject.FromObject(context.Spec.Template!).ToObject<V1PodTemplateSpec>()!;
+        if (!context.Spec.Template.Metadata.Labels.ContainsKey("kerberos"))
         {
-            _log.LogInformation("matches selector");
-
-            // Add ports to primary container
-            if (bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["ports"] == null ||
-                bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["ports"]!.Type == JTokenType.Null)
-            {
-                bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["ports"] = new JArray();
-            }
-
-            ((JArray)bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["ports"]!).Add(
-                JObject.Parse("{'containerPort': 8080}"));
-
-            // Add environment variables to primary container
-            if (bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["env"] == null ||
-                bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["env"]!.Type == JTokenType.Null)
-            {
-                bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["env"] = new JArray();
-            }
-
-            ((JArray)bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["env"]!).Add(
-                JObject.Parse("{'name': 'KRB5_CONFIG', 'value': '/krb/krb5.conf'}"));
-            ((JArray)bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["env"]!).Add(
-                JObject.Parse("{'name': 'KRB5CCNAME', 'value': '/krb/krb5cc'}"));
-            ((JArray)bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["env"]!).Add(
-                JObject.Parse("{'name': 'KRB5_KTNAME', 'value': '/krb/service.keytab'}"));
-            ((JArray)bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["env"]!).Add(
-                JObject.Parse("{'name': 'KRB5_CLIENT_KTNAME', 'value': '/krb/service.keytab'}"));
-
-            // Add VolumeMounts to primary container 
-            if (bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["volumeMounts"] == null ||
-                bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["volumeMounts"]!.Type ==
-                JTokenType.Null)
-            {
-                bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["volumeMounts"] = new JArray();
-            }
-
-            ((JArray)bodyObject!["status"]!["template"]!["spec"]!["containers"]![0]!["volumeMounts"]!).Add(
-                JObject.Parse("{'name': 'krb-app', 'mountPath': '/krb'}"));
-
-            // Add Volumes
-            string containerBlock = @"{
-        'name': 'kdc-sidecar',
-        'image': '<<SIDECAR_IMAGE>>',
-        'resources': {
-        'limits': {
-            'memory': '100Mi',
-            'cpu': '100m'
-        },
-        'requests': {
-            'memory': '100Mi',
-            'cpu': '100m'
-        }},
-        'env': [
-            {
-                'name': 'KRB_KDC',
-                'valueFrom': {
-                    'secretKeyRef': {
-                        'name': 'kerberos-demo-krb-creds',
-                        'key': 'ad_host',
-                        'optional': false
-                    }
-               }
-             },
-            {
-                'name': 'KRB_SERVICE_ACCOUNT',
-                'valueFrom': {
-                    'secretKeyRef': {
-                        'name': 'kerberos-demo-krb-creds',
-                        'key': 'username',
-                        'optional': false
-                    }
-                }
-            },
-            {
-                'name': 'KRB_PASSWORD',
-                'valueFrom': {
-                    'secretKeyRef': {
-                        'name': 'kerberos-demo-krb-creds',
-                        'key': 'password',
-                        'optional': false
-                    }
-                }
-            },
-            {
-                'name': 'KRB5_CONFIG',
-                'value': '/krb/krb5.conf'
-            },
-            {
-                'name': 'KRB5CCNAME',
-                'value': '/krb/krb5cc'
-            },
-            {
-                'name': 'KRB5_KTNAME',
-                'value': '/krb/service.keytab'
-            },
-            {
-                'name': 'KRB5_CLIENT_KTNAME',
-                'value': '/krb/service.keytab'
-            }
-        ],
-        'volumeMounts': [
-            {
-                'name': 'krb-app',
-                'mountPath': '/krb'
-            }
-        ]
-    }";
-            var sidecarContainer = JObject.Parse(containerBlock.Replace("<<SIDECAR_IMAGE>>",
-                Environment.GetEnvironmentVariable("SIDECAR_IMAGE")));
-
-
-            ((JArray)bodyObject!["status"]!["template"]!["spec"]!["containers"]!).Add(sidecarContainer);
-
-
-            // Add Volumes
-
-            string volumes = @"{
-                    'name': 'krb-app',
-                    'emptyDir': {
-                        'medium': 'Memory'
-                    }
-                }";
-
-            if (bodyObject!["status"]!["template"]!["spec"]!["volumes"] == null ||
-                bodyObject!["status"]!["template"]!["spec"]!["volumes"]!.Type == JTokenType.Null)
-            {
-                bodyObject!["status"]!["template"]!["spec"]!["volumes"] = new JArray();
-            }
-
-            ((JArray)bodyObject!["status"]!["template"]!["spec"]!["volumes"]!).Add(JObject.Parse(volumes));
-
-
-            if (bodyObject!["status"]!["appliedConventions"] == null ||
-                bodyObject!["status"]!["appliedConventions"]!.Type == JTokenType.Null)
-            {
-                bodyObject!["status"]!["appliedConventions"] = new JArray();
-            }
-
-            ((JArray)bodyObject?["status"]?["appliedConventions"]!).Add("kerberos-sidecar-convention");
-
-            _log.LogInformation(bodyObject?.ToString());
-        }
-        else
-        {
-            _log.LogInformation("does not match selector");
+            _log.LogDebug("No kerberos label applied - skipping convention");
+            return context;
         }
 
-        return bodyObject?.ToString() ?? String.Empty;
+        var container = context.Status.Template!.Spec?.Containers.First()!;
+        if (container.Ports?.Count == 0)
+        {
+            container.Ports.Add(new V1ContainerPort{ ContainerPort = 8080 });
+        }
+
+        container.Env ??= new List<V1EnvVar>();
+        container.Env.Add(new V1EnvVar("KRB5_CONFIG", "/krb/krb5.conf"));
+        container.Env.Add(new V1EnvVar("KRB5_KTNAME", "/krb/service.keytab"));
+        container.Env.Add(new V1EnvVar("KRB5_CLIENT_KTNAME", "/krb/service.keytab"));
+
+        container.VolumeMounts ??= new List<V1VolumeMount>();
+        container.VolumeMounts.Add(new V1VolumeMount
+        {
+            Name = "krb-app",
+            MountPath = "/krb",
+        });
+
+
+        var sidecarContainer = new V1Container
+        {
+            Name = "kdc-sidecar",
+            Image = Environment.GetEnvironmentVariable("SIDECAR_IMAGE"), //todo: replace with options,
+            Resources = new()
+            {
+                Limits = new Dictionary<string, ResourceQuantity>
+                {
+                    { "memory", new ResourceQuantity("100mi") },
+                    { "cpu", new ResourceQuantity("100m") }
+                },
+                Requests = new Dictionary<string, ResourceQuantity>
+                {
+                    { "memory", new ResourceQuantity("100mi") },
+                    { "cpu", new ResourceQuantity("100m") }
+                },
+
+            },
+            Env = new List<V1EnvVar>()
+            {
+                new("KRB_KDC", valueFrom: new V1EnvVarSource(secretKeyRef: new V1SecretKeySelector
+                {
+                    Name = "kerberos-demo-krb-creds",
+                    Key = "ad_host",
+                    Optional = false
+                })),
+                new("KRB_SERVICE_ACCOUNT", valueFrom: new V1EnvVarSource(secretKeyRef: new V1SecretKeySelector
+                {
+                    Name = "kerberos-demo-krb-creds",
+                    Key = "username",
+                    Optional = false
+                })),
+                new("KRB_PASSWORD", valueFrom: new V1EnvVarSource(secretKeyRef: new V1SecretKeySelector
+                {
+                    Name = "kerberos-demo-krb-creds",
+                    Key = "password",
+                    Optional = false
+                })),
+                new("KRB5_CONFIG", "/krb/krb5.conf"),
+                new("KRB5CCNAME", "/krb/krb5cc"),
+                new("KRB5_KTNAME", "/krb/service.keytab"),
+                new("KRB5_CLIENT_KTNAME", "/krb/service.keytab"),
+            },
+            VolumeMounts = new List<V1VolumeMount>()
+            {
+                new()
+                {
+                    Name = "krb-app",
+                    MountPath = "/krb"
+                }
+            }
+        };
+        context.Status.Template!.Spec!.Containers.Add(sidecarContainer);
+        context.Status.Template.Spec!.Volumes ??= new List<V1Volume>();
+        context.Status.Template.Spec!.Volumes.Add(new V1Volume(
+            name: "krb-app", 
+            emptyDir: new V1EmptyDirVolumeSource
+            {
+                Medium = "memory"
+            }));
+
+        context.Status.AppliedConventions ??= new List<string>();
+        context.Status.AppliedConventions.Add("kerberos-sidecar-convention");
+        _log.LogInformation("Kerberos convention applied");
+        _log.LogDebug("{PodConventionContext}", JsonConvert.SerializeObject(context, Formatting.Indented));
+        return context;
     }
 }

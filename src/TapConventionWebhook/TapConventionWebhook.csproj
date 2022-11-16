@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="KubernetesClient.Models" Version="9.0.38" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.11" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
     <PackageReference Include="NetEscapades.Configuration.Yaml" Version="2.1.0" />
@@ -23,4 +24,7 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="TapConventionWebhook.Tests" />
+  </ItemGroup>
 </Project>

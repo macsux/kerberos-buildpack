@@ -9,19 +9,19 @@
 public partial class PodConventionContext
 {
     [Newtonsoft.Json.JsonProperty("apiVersion", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public string? ApiVersion { get; set; }
+    public string ApiVersion { get; set; } = null!;
 
     [Newtonsoft.Json.JsonProperty("kind", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public string? Kind { get; set; }
+    public string Kind { get; set; } = null!;
 
     [Newtonsoft.Json.JsonProperty("metadata", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public Metadata? Metadata { get; set; }
+    public Metadata Metadata { get; set; } = null!;
 
     [Newtonsoft.Json.JsonProperty("spec", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public PodConventionContextSpec? Spec { get; set; }
+    public PodConventionContextSpec Spec { get; set; } = null!;
 
     [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public PodConventionContextStatus? Status { get; set; }
+    public PodConventionContextStatus Status { get; set; }  = null!;
 
     private IDictionary<string, object>? _additionalProperties;
 

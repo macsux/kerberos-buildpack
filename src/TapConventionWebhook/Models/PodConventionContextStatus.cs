@@ -7,12 +7,12 @@
 public partial class PodConventionContextStatus
 {
     [Newtonsoft.Json.JsonProperty("template", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-    public k8s.Models.V1PodTemplateSpec? Template { get; set; }
+    public k8s.Models.V1PodTemplateSpec Template { get; set; } = null!;
 
     /// <summary>
     /// a list of string with names of conventions to be applied
     /// </summary>
-    [Newtonsoft.Json.JsonProperty("appliedConventions", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+    [Newtonsoft.Json.JsonProperty("appliedConventions", Required = Newtonsoft.Json.Required.AllowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public List<string>? AppliedConventions { get; set; }
 
     private IDictionary<string, object>? _additionalProperties;
