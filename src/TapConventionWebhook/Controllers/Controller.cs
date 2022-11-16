@@ -7,11 +7,6 @@ using Newtonsoft.Json.Linq;
 namespace TapConventionWebhook.Controllers;
 //https://raw.githubusercontent.com/vmware-tanzu/cartographer-conventions/main/api/openapi-spec/conventions-server.yaml
 
-public class TestMe
-{
-    public string? Name { get; set; }
-}
-
 public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
 {
     private readonly ILogger<WebHookController> _log;
@@ -19,12 +14,6 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
     public WebHookController(ILogger<WebHookController> log)
     {
         _log = log;
-    }
-
-    [HttpPost("hello")]
-    public Task<TestMe> Hello([FromBody]TestMe input)
-    {
-        return Task.FromResult(input);
     }
 
     /// <remarks>
