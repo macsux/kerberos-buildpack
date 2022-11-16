@@ -1,0 +1,8 @@
+apiVersion: conventions.apps.tanzu.vmware.com/v1alpha1
+kind: ClusterPodConvention
+metadata:
+  name: kerberos-convention-server
+spec:
+  webhook:
+    clientConfig:
+      url: https://kerberos-convention-server.dpfeffer.dotnet-tap.tanzu-azure-lab.winterfell.fun/webhook
