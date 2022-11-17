@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -6,6 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using FluentAssertions;
+using k8s.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -69,16 +71,37 @@ public class ConventionServiceTests : IClassFixture<WebApplicationFactory<Progra
     // }
     //
     [Fact]
-    public async Task Webhook_PostJson()
+    public async Task Webhook_WhenKerberosLabel_ApplyConvention()
     {
         
         var content = new StringContent(EmbeddedResources.Webhook_Post_json);
         content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
         var result = await _client.PostAsync("/webhook", content);
         result.StatusCode.Should().Be(HttpStatusCode.OK);
-        result.IsSuccessStatusCode.Should().BeTrue();
-        var response  = await result.Content.ReadFromJsonAsync<PodConventionContext>();
-        response?.Kind.Should().Be("PodConventionContext");
+        var response  = (await result.Content.ReadFromJsonAsync<PodConventionContext>())!;
+        response.Should().NotBeNull();
+        response.Kind.Should().Be("PodConventionContext");
+        response.Status.Should().NotBeNull();
+        response.Status.AppliedConventions.Should().Contain("kerberos-sidecar-convention");
+        response.Status.Template.Spec.Containers.Should().HaveCount(2);
+        var appContainer = response.Status.Template.Spec.Containers[0];
+        appContainer.Env.Should().ContainEquivalentOf(new V1EnvVar("KRB5_CONFIG", "/krb/krb5.conf"));
+        appContainer.Env.Should().ContainEquivalentOf(new V1EnvVar("KRB5_KTNAME", "/krb/service.keytab"));
+        appContainer.Env.Should().ContainEquivalentOf(new V1EnvVar("KRB5_CLIENT_KTNAME", "/krb/service.keytab"));
+        appContainer.VolumeMounts.Should().NotBeEmpty();
+        appContainer.VolumeMounts[0].MountPath.Should().Be("/krb");
+        
+        var sidecarContainer = response.Status.Template.Spec.Containers[1];
+        sidecarContainer.Name.Should().Be("kdc-sidecar");
+        sidecarContainer.Env.Should().Contain(x => x.Name == "KRB_KDC");
+        sidecarContainer.Env.Should().Contain(x => x.Name == "KRB_SERVICE_ACCOUNT");
+        sidecarContainer.Env.Should().Contain(x => x.Name == "KRB_PASSWORD");
+        sidecarContainer.Env.Should().Contain(x => x.Name == "KRB5_CONFIG");
+        sidecarContainer.Env.Should().Contain(x => x.Name == "KRB5CCNAME");
+        sidecarContainer.Env.Should().Contain(x => x.Name == "KRB5_KTNAME");
+        sidecarContainer.Env.Should().Contain(x => x.Name == "KRB5_CLIENT_KTNAME");
+        sidecarContainer.VolumeMounts.Should().NotBeEmpty();
+        sidecarContainer.VolumeMounts[0].MountPath.Should().Be("/krb");
         _output.WriteLine(JsonSerializer.Serialize(response, _serializerOptions));
     }
 }

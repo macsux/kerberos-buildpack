@@ -123,7 +123,6 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
         context.Status.AppliedConventions.Add("kerberos-sidecar-convention");
         _log.LogInformation("Kerberos convention applied");
         
-        // _log.LogDebug("{PodConventionContext}", JsonConvert.SerializeObject(context, Program.JsonSerializerSettings));
         return context;
     }
 }
