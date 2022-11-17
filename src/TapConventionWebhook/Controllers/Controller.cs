@@ -1,8 +1,9 @@
+using System.Text.Json;
 using k8s.Models;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
+// using Newtonsoft.Json;
 using TapConventionWebhook.Models;
-using Newtonsoft.Json.Linq;
+// using Newtonsoft.Json.Linq;
 
 namespace TapConventionWebhook.Controllers;
 //https://raw.githubusercontent.com/vmware-tanzu/cartographer-conventions/main/api/openapi-spec/conventions-server.yaml
@@ -32,7 +33,8 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
         context.Status ??= new PodConventionContextStatus();
         context.Spec ??= new PodConventionContextSpec();
         context.Spec!.Template ??= new V1PodTemplateSpec();
-        context.Status.Template = JObject.FromObject(context.Spec.Template!).ToObject<V1PodTemplateSpec>()!;
+        
+        context.Status.Template = JsonSerializer.Deserialize<V1PodTemplateSpec>(JsonSerializer.Serialize(context.Spec.Template!))!;
         if (!context.Spec.Template.Metadata.Labels.ContainsKey("kerberos"))
         {
             _log.LogDebug("No kerberos label applied - skipping convention");
@@ -121,7 +123,7 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
         context.Status.AppliedConventions.Add("kerberos-sidecar-convention");
         _log.LogInformation("Kerberos convention applied");
         
-        _log.LogDebug("{PodConventionContext}", JsonConvert.SerializeObject(context, Program.JsonSerializerSettings));
+        // _log.LogDebug("{PodConventionContext}", JsonConvert.SerializeObject(context, Program.JsonSerializerSettings));
         return context;
     }
 }

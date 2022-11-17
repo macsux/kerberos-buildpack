@@ -1,12 +1,12 @@
-﻿namespace TapConventionWebhook.Models;
+﻿using System.Text.Json.Serialization;
+
+namespace TapConventionWebhook.Models;
 
 /// <summary>
 /// a wrapper of the PodTemplateSpec and list of ImageConfigs provided in the request body of the server.
 /// </summary>
-[System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "13.17.0.0 (NJsonSchema v10.8.0.0 (Newtonsoft.Json v13.0.0.0))")]
 public partial class PodConventionContextSpec
 {
-    [Newtonsoft.Json.JsonProperty("template", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public k8s.Models.V1PodTemplateSpec? Template { get; set; }
 
     /// <summary>
@@ -15,12 +15,11 @@ public partial class PodConventionContextSpec
     /// <br/>images referenced in the PodTemplateSpec. 
     /// <br/>
     /// </summary>
-    [Newtonsoft.Json.JsonProperty("imageConfig", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
     public List<ImageConfig>? ImageConfig { get; set; }
 
     private IDictionary<string, object>? _additionalProperties;
 
-    [Newtonsoft.Json.JsonExtensionData]
+    [JsonExtensionData]
     public IDictionary<string, object> AdditionalProperties
     {
         get { return _additionalProperties ??= new Dictionary<string, object>(); }

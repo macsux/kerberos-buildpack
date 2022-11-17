@@ -38,6 +38,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TapConventionWebhook", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TapConventionWebhook.Tests", "tests\TapConventionWebhook.Tests\TapConventionWebhook.Tests.csproj", "{2886425D-9E1D-4C4A-9620-4709C5E06412}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "generator", "tests\generator\generator.csproj", "{886443EA-E5A1-40C2-9476-D8E21B244A87}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,6 +88,10 @@ Global
 		{2886425D-9E1D-4C4A-9620-4709C5E06412}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2886425D-9E1D-4C4A-9620-4709C5E06412}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2886425D-9E1D-4C4A-9620-4709C5E06412}.Release|Any CPU.Build.0 = Release|Any CPU
+		{886443EA-E5A1-40C2-9476-D8E21B244A87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{886443EA-E5A1-40C2-9476-D8E21B244A87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{886443EA-E5A1-40C2-9476-D8E21B244A87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{886443EA-E5A1-40C2-9476-D8E21B244A87}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -106,5 +112,6 @@ Global
 		{7E2C63B4-F70F-4136-A640-A4D4AE1570EB} = {3EAACEF7-0379-4971-B1F7-EBE5E6420501}
 		{70144943-6BC7-4473-889F-C8289C20CB0F} = {7BF14C44-4B4C-4973-B7AD-1C2D45242AE2}
 		{2886425D-9E1D-4C4A-9620-4709C5E06412} = {3EAACEF7-0379-4971-B1F7-EBE5E6420501}
+		{886443EA-E5A1-40C2-9476-D8E21B244A87} = {3EAACEF7-0379-4971-B1F7-EBE5E6420501}
 	EndGlobalSection
 EndGlobal
