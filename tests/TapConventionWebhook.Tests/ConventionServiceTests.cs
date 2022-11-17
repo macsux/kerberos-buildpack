@@ -16,6 +16,7 @@ using Newtonsoft.Json.Linq;
 using TapConventionWebhook.Controllers;
 using TapConventionWebhook.Models;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace TapConventionWebhook.Tests;
 
@@ -23,12 +24,18 @@ namespace TapConventionWebhook.Tests;
 public class ConventionServiceTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
+
+    private readonly ITestOutputHelper _output;
+
     // private readonly TestServer _server;
     private readonly HttpClient _client;
+    private readonly ITestOutputHelper output;
 
-    public ConventionServiceTests(WebApplicationFactory<Program> factory)
+
+    public ConventionServiceTests(WebApplicationFactory<Program> factory, ITestOutputHelper output)
     {
         _factory = factory;
+        _output = output;
         _client = factory.CreateClient();
     }
 
@@ -103,5 +110,11 @@ public class ConventionServiceTests : IClassFixture<WebApplicationFactory<Progra
         result.IsSuccessStatusCode.Should().BeTrue();
         var response  = await result.Content.ReadFromJsonAsync<PodConventionContext>();
         response?.Kind.Should().Be("PodConventionContext");
+        var settings = new JsonSerializerSettings()
+        {
+            Formatting = Formatting.Indented,
+            NullValueHandling = NullValueHandling.Ignore
+        };
+        _output.WriteLine(JsonConvert.SerializeObject(response, settings ));
     }
 }

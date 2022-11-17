@@ -60,20 +60,20 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
         {
             Name = "kdc-sidecar",
             Image = Environment.GetEnvironmentVariable("SIDECAR_IMAGE"), //todo: replace with options,
-            // Resources = new()
-            // {
-            //     Limits = new Dictionary<string, ResourceQuantity>
-            //     {
-            //         { "memory", new ResourceQuantity("100Mi") },
-            //         { "cpu", new ResourceQuantity("100m") }
-            //     },
-            //     Requests = new Dictionary<string, ResourceQuantity>
-            //     {
-            //         { "memory", new ResourceQuantity("100Mi") },
-            //         { "cpu", new ResourceQuantity("100m") }
-            //     },
-            //
-            // },
+            Resources = new()
+            {
+                Limits = new Dictionary<string, ResourceQuantity>
+                {
+                    { "memory", new ResourceQuantity("100Mi") },
+                    { "cpu", new ResourceQuantity("100m") }
+                },
+                Requests = new Dictionary<string, ResourceQuantity>
+                {
+                    { "memory", new ResourceQuantity("100Mi") },
+                    { "cpu", new ResourceQuantity("100m") }
+                },
+            
+            },
             Env = new List<V1EnvVar>()
             {
                 new("KRB_KDC", valueFrom: new V1EnvVarSource(secretKeyRef: new V1SecretKeySelector
@@ -120,7 +120,8 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
         context.Status.AppliedConventions ??= new List<string>();
         context.Status.AppliedConventions.Add("kerberos-sidecar-convention");
         _log.LogInformation("Kerberos convention applied");
-        _log.LogDebug("{PodConventionContext}", JsonConvert.SerializeObject(context, Formatting.Indented));
+        
+        _log.LogDebug("{PodConventionContext}", JsonConvert.SerializeObject(context, Program.JsonSerializerSettings));
         return context;
     }
 }
