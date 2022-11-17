@@ -36,8 +36,6 @@ public class ConventionServiceTests : IClassFixture<WebApplicationFactory<Progra
     private readonly WebApplicationFactory<Program> _factory;
 
     private readonly ITestOutputHelper _output;
-
-    // private readonly TestServer _server;
     private readonly HttpClient _client;
     private readonly ITestOutputHelper output;
 
@@ -49,32 +47,22 @@ public class ConventionServiceTests : IClassFixture<WebApplicationFactory<Progra
         _client = factory.CreateClient();
     }
 
-
-
-    // [Fact]
-    // public async Task Webhook_PostAsObject()
-    // {
-    //     var input = new PodConventionContext()
-    //     {
-    //         Kind = "blah",
-    //         Metadata = new()
-    //         {
-    //             Name = "myobj"
-    //         }
-    //     };
-    //
-    //     var result = await _client.PostAsJsonAsync("/webhook", input);
-    //     result.StatusCode.Should().Be(HttpStatusCode.OK);
-    //     result.IsSuccessStatusCode.Should().BeTrue();
-    //     var response  = await result.Content.ReadFromJsonAsync<PodConventionContext>();
-    //     response?.Kind.Should().Be("blah");
-    // }
-    //
+    [Fact]
+    public async Task Webhook_WhenMissingKerberosLabel_SkipConvention()
+    {
+        var content = new StringContent(EmbeddedResources.WithoutKerberosLabel_json);
+        content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+        var result = await _client.PostAsync("/webhook", content);
+        result.StatusCode.Should().Be(HttpStatusCode.OK);
+        var response  = (await result.Content.ReadFromJsonAsync<PodConventionContext>())!;
+        response.Should().NotBeNull();
+        response.Status.AppliedConventions?.Should().NotContain("kerberos-sidecar-convention");
+    }
     [Fact]
     public async Task Webhook_WhenKerberosLabel_ApplyConvention()
     {
         
-        var content = new StringContent(EmbeddedResources.Webhook_Post_json);
+        var content = new StringContent(EmbeddedResources.WithKerberosLabel_json);
         content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
         var result = await _client.PostAsync("/webhook", content);
         result.StatusCode.Should().Be(HttpStatusCode.OK);
