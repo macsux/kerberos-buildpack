@@ -40,10 +40,8 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
         }
 
         var container = context.Status.Template!.Spec?.Containers.First()!;
-        if (container.Ports?.Count == 0)
-        {
-            container.Ports.Add(new V1ContainerPort{ ContainerPort = 8080 });
-        }
+        container.Ports ??= new List<V1ContainerPort>();
+        container.Ports.Add(new V1ContainerPort{ ContainerPort = 8080 });
 
         container.Env ??= new List<V1EnvVar>();
         container.Env.Add(new V1EnvVar("KRB5_CONFIG", "/krb/krb5.conf"));
@@ -62,20 +60,20 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
         {
             Name = "kdc-sidecar",
             Image = Environment.GetEnvironmentVariable("SIDECAR_IMAGE"), //todo: replace with options,
-            Resources = new()
-            {
-                Limits = new Dictionary<string, ResourceQuantity>
-                {
-                    { "memory", new ResourceQuantity("100mi") },
-                    { "cpu", new ResourceQuantity("100m") }
-                },
-                Requests = new Dictionary<string, ResourceQuantity>
-                {
-                    { "memory", new ResourceQuantity("100mi") },
-                    { "cpu", new ResourceQuantity("100m") }
-                },
-
-            },
+            // Resources = new()
+            // {
+            //     Limits = new Dictionary<string, ResourceQuantity>
+            //     {
+            //         { "memory", new ResourceQuantity("100Mi") },
+            //         { "cpu", new ResourceQuantity("100m") }
+            //     },
+            //     Requests = new Dictionary<string, ResourceQuantity>
+            //     {
+            //         { "memory", new ResourceQuantity("100Mi") },
+            //         { "cpu", new ResourceQuantity("100m") }
+            //     },
+            //
+            // },
             Env = new List<V1EnvVar>()
             {
                 new("KRB_KDC", valueFrom: new V1EnvVarSource(secretKeyRef: new V1SecretKeySelector
@@ -116,7 +114,7 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
             name: "krb-app", 
             emptyDir: new V1EmptyDirVolumeSource
             {
-                Medium = "memory"
+                Medium = "Memory"
             }));
 
         context.Status.AppliedConventions ??= new List<string>();
