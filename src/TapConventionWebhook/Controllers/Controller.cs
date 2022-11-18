@@ -78,24 +78,25 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
             },
             Env = new List<V1EnvVar>()
             {
-                new("KRB_KDC", valueFrom: new V1EnvVarSource(secretKeyRef: new V1SecretKeySelector
-                {
-                    Name = "kerberos-demo-krb-creds",
-                    Key = "ad_host",
-                    Optional = false
-                })),
-                new("KRB_SERVICE_ACCOUNT", valueFrom: new V1EnvVarSource(secretKeyRef: new V1SecretKeySelector
-                {
-                    Name = "kerberos-demo-krb-creds",
-                    Key = "username",
-                    Optional = false
-                })),
-                new("KRB_PASSWORD", valueFrom: new V1EnvVarSource(secretKeyRef: new V1SecretKeySelector
-                {
-                    Name = "kerberos-demo-krb-creds",
-                    Key = "password",
-                    Optional = false
-                })),
+                //todo: remove
+                // new("KRB_KDC", valueFrom: new V1EnvVarSource(secretKeyRef: new V1SecretKeySelector
+                // {
+                //     Name = "kerberos-demo-krb-creds",
+                //     Key = "ad_host",
+                //     Optional = false
+                // })),
+                // new("KRB_SERVICE_ACCOUNT", valueFrom: new V1EnvVarSource(secretKeyRef: new V1SecretKeySelector
+                // {
+                //     Name = "kerberos-demo-krb-creds",
+                //     Key = "username",
+                //     Optional = false
+                // })),
+                // new("KRB_PASSWORD", valueFrom: new V1EnvVarSource(secretKeyRef: new V1SecretKeySelector
+                // {
+                //     Name = "kerberos-demo-krb-creds",
+                //     Key = "password",
+                //     Optional = false
+                // })),
                 new("KRB5_CONFIG", "/krb/krb5.conf"),
                 new("KRB5CCNAME", "/krb/krb5cc"),
                 new("KRB5_KTNAME", "/krb/service.keytab"),

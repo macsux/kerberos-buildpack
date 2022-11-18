@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 
 namespace KerberosDemo.Controllers
@@ -31,6 +32,7 @@ namespace KerberosDemo.Controllers
 
         public HomeController(ILogger<HomeController> logger, IConfiguration configuration)
         {
+            //SqlServerBindingInfo
             _logger = logger;
             _configuration = configuration;
             _sidecarClient =  new HttpClient()
@@ -38,7 +40,12 @@ namespace KerberosDemo.Controllers
                 BaseAddress = new Uri(_configuration.GetValue<string>("SidecarUrl"))
             };
         }
-
+        //
+        // [HttpGet("/binding")]
+        // public ActionResult<ActiveDirectoryBindingInfo> Binding([FromServices]IOptionsSnapshot<ActiveDirectoryBindingInfo> bindingInfo)
+        // {
+        //     return bindingInfo.Value;
+        // }
 
         [HttpGet("/user")]
         public ActionResult<UserDetails> AuthenticateUser(bool forceAuth)
@@ -94,9 +101,9 @@ namespace KerberosDemo.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet("/sql")]
-        public ActionResult<SqlServerInfo> SqlTest(string connectionString)
+        public ActionResult<SqlServerInfo> SqlTest([FromServices]IOptionsSnapshot<SqlServerBindingInfo> binding, string connectionString)
         {
-            connectionString ??= _configuration.GetConnectionString("SqlServer");
+            connectionString ??=  binding.Value.ConnectionString ?? _configuration.GetConnectionString("SqlServer");
             if (connectionString == null)
             {
                 return StatusCode(500, "Connection string not set. Set 'ConnectionStrings__SqlServer' environmental variable");

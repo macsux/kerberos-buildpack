@@ -9,6 +9,7 @@
     <PackageReference Include="Kerberos.NET" Version="4.5.158" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="5.0.12" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0" />
+    <PackageReference Include="Steeltoe.Configuration.Kubernetes.ServiceBinding" Version="4.0.21-alpha-g7f2956953e" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
   </ItemGroup>
 
@@ -16,6 +17,10 @@
     <None Update="manifest.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="bindings" />
   </ItemGroup>
 
 </Project>

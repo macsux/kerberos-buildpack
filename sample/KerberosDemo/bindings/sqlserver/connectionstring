@@ -1,0 +1,1 @@
+Server=ad.steeltoe.io;Database=master;Trusted_Connection=True;TrustServerCertificate=True

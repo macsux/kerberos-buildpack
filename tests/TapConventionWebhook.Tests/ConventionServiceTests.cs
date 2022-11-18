@@ -81,9 +81,10 @@ public class ConventionServiceTests : IClassFixture<WebApplicationFactory<Progra
         
         var sidecarContainer = response.Status.Template.Spec.Containers[1];
         sidecarContainer.Name.Should().Be("kdc-sidecar");
-        sidecarContainer.Env.Should().Contain(x => x.Name == "KRB_KDC");
-        sidecarContainer.Env.Should().Contain(x => x.Name == "KRB_SERVICE_ACCOUNT");
-        sidecarContainer.Env.Should().Contain(x => x.Name == "KRB_PASSWORD");
+        //todo: remove
+        // sidecarContainer.Env.Should().Contain(x => x.Name == "KRB_KDC");
+        // sidecarContainer.Env.Should().Contain(x => x.Name == "KRB_SERVICE_ACCOUNT");
+        // sidecarContainer.Env.Should().Contain(x => x.Name == "KRB_PASSWORD");
         sidecarContainer.Env.Should().Contain(x => x.Name == "KRB5_CONFIG");
         sidecarContainer.Env.Should().Contain(x => x.Name == "KRB5CCNAME");
         sidecarContainer.Env.Should().Contain(x => x.Name == "KRB5_KTNAME");

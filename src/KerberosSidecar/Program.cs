@@ -15,10 +15,16 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Steeltoe.Configuration.Kubernetes.ServiceBinding;
 using Steeltoe.Extensions.Configuration.CloudFoundry;
 
 
 var webHostBuilder = WebApplication.CreateBuilder(args);
+
+if (Environment.GetEnvironmentVariable("SERVICE_BINDING_ROOT") != null)
+{
+    webHostBuilder.Configuration.AddKubernetesServiceBindings();
+}
 
 webHostBuilder.Configuration
     .AddYamlFile("appsettings.yaml", optional: true, reloadOnChange: true)
@@ -40,6 +46,19 @@ services.AddOptions<KerberosOptions>()
         c.Password = config.GetValue<string>("KRB_PASSWORD");
         c.Kdc = config.GetValue<string>("KRB_KDC");
         c.RunOnce = config.GetValue<bool>("KRB_RunOnce");
+    })
+    .Configure(c =>
+    {
+        var config = webHostBuilder.Configuration;
+        var bindings = config.GetSection("k8s:bindings").GetChildren().ToList();
+        var activeDirectoryBinding = bindings.FirstOrDefault(x => x.GetValue<string>("type") == "ActiveDirectory");
+        if (activeDirectoryBinding != null)
+        {
+            c.Kdc = activeDirectoryBinding.GetValue<string>("host");
+            c.ServiceAccount = activeDirectoryBinding.GetValue<string>("username");
+            c.Password = activeDirectoryBinding.GetValue<string>("password");
+        }
+
     })
     .Configure<IConfiguration>((options, config) =>
     {
