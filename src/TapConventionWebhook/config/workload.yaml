@@ -12,7 +12,7 @@ spec:
         autoscaling.knative.dev/minScale: "1"
   env:
     - name: SIDECAR_IMAGE
-      value: winterfell2.azurecr.io/tap/sc/kerberos-sidecar:latest     
+      value: winterfell2.azurecr.io/tap/sc/kerberos-sidecar@sha256:76bee8e0d550ef47c3c60e6867fc258fd119f430214546f02c2244d6451daaf2     
   source:
     git:
       url: https://github.com/macsux/kerberos-buildpack
