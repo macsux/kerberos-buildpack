@@ -139,19 +139,28 @@ public class KerberosWorker : BackgroundService
         
         var realm = credentials.Domain;
         List<KerberosKey> kerberosKeys = new();
+        
         foreach (var spn in spns)
         {
             foreach (var (encryptionType, salt) in credentials.Salts)
             {
-                var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_SRV_HST, realm, new[] { spn }), salt: salt, etype: encryptionType);
-                kerberosKeys.Add(key);
+                for (int kvno = 1; kvno < 20; kvno++)
+                {
+                    var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_SRV_HST, realm, new[] { spn }), salt: salt, etype: encryptionType, kvno: kvno);
+                    kerberosKeys.Add(key);
+                }
+                
             }
         }
         foreach (var (encryptionType, salt) in credentials.Salts)
         {
-            var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { credentials.UserName }), salt: salt, etype: encryptionType);
-            kerberosKeys.Add(key);
+            for (int kvno = 1; kvno < 20; kvno++)
+            {
+                var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { credentials.UserName }), salt: salt, etype: encryptionType, kvno: kvno);
+                kerberosKeys.Add(key);
+            }
         }
+        
         var keyTable = new KeyTable(kerberosKeys.ToArray());
         return keyTable;
     }
