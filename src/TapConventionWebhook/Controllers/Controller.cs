@@ -101,6 +101,11 @@ public partial class WebHookController : Microsoft.AspNetCore.Mvc.ControllerBase
                 new("KRB5CCNAME", "/krb/krb5cc"),
                 new("KRB5_KTNAME", "/krb/service.keytab"),
                 new("KRB5_CLIENT_KTNAME", "/krb/service.keytab"),
+                new("POD_NAMESPACE", null, new(null,new("metadata.namespace"),null, null)),
+                new("KSVC_NAME", null, new(null,new("metadata.labels['serving.knative.dev/service']"),null,null)),
+                //todo: replace with options instead of environemnt,
+                new("Routes__0",
+                    $"https://$(KSVC_NAME).$(POD_NAMESPACE).{Environment.GetEnvironmentVariable("SHARED_INGRESS")}"),
             },
             VolumeMounts = new List<V1VolumeMount>()
             {
