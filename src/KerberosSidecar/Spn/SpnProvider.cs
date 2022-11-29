@@ -13,7 +13,7 @@ public class SpnProvider
         _logger = logger;
     }
 
-    public Task<List<string>> GetSpnsForAppRoutes(CancellationToken cancellationToken = default) => GetSpnsForAppRoutes("http", cancellationToken);
+    public Task<List<string>> GetSpnsForAppRoutes(CancellationToken cancellationToken = default) => GetSpnsForAppRoutes("HTTP", cancellationToken);
     public async Task<List<string>> GetSpnsForAppRoutes(string serviceType, CancellationToken cancellationToken = default)
     {
         var routes = await _routeProvider.GetRoutes(cancellationToken);
