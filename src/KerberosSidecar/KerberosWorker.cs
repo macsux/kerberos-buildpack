@@ -51,9 +51,10 @@ public class KerberosWorker : BackgroundService
     {
         try
         {
+            await EnsureTgt(true);
+
             await CreateMitKerberosKrb5Config();
             await CreateMitKerberosKeytab();
-            await EnsureTgt(true);
             await _spnProvider.EnsureSpns(_cancellationToken);
             _tgtHealthCheck.LastException = null;
         }
@@ -136,6 +137,8 @@ public class KerberosWorker : BackgroundService
     {
         var credentials = await _credentialFactory.Get(_options.CurrentValue, _cancellationToken);
         var spns = await _spnProvider.GetSpnsForAppRoutes(_cancellationToken);
+        var ticketForSelf = await _options.CurrentValue.KerberosClient.GetServiceTicket(credentials.UserName);
+        var kvno = ticketForSelf.Ticket.EncryptedPart.KeyVersionNumber;
         
         var realm = credentials.Domain;
         List<KerberosKey> kerberosKeys = new();
@@ -144,21 +147,14 @@ public class KerberosWorker : BackgroundService
         {
             foreach (var (encryptionType, salt) in credentials.Salts)
             {
-                for (int kvno = 1; kvno < 20; kvno++)
-                {
-                    var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_SRV_HST, realm, new[] { spn }), salt: salt, etype: encryptionType, kvno: kvno);
-                    kerberosKeys.Add(key);
-                }
-                
+                var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_SRV_HST, realm, new[] { spn }), salt: salt, etype: encryptionType, kvno: kvno);
+                kerberosKeys.Add(key);
             }
         }
         foreach (var (encryptionType, salt) in credentials.Salts)
         {
-            for (int kvno = 1; kvno < 20; kvno++)
-            {
-                var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { credentials.UserName }), salt: salt, etype: encryptionType, kvno: kvno);
-                kerberosKeys.Add(key);
-            }
+            var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { credentials.UserName }), salt: salt, etype: encryptionType, kvno: kvno);
+            kerberosKeys.Add(key);
         }
         
         var keyTable = new KeyTable(kerberosKeys.ToArray());
