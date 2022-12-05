@@ -15,7 +15,7 @@ public static class KerberosCredentialExtensions
         var asReqMessage = KrbAsReq.CreateAsReq(credential, AuthenticationOptions.Renewable);
         var asReq = asReqMessage.EncodeApplication();
 
-
+        IEnumerable<KrbPaData>? paData = null;
         var transport = new KerberosTransportSelector(
             new IKerberosTransport[]
             {
@@ -31,16 +31,16 @@ public static class KerberosCredentialExtensions
         };
         try
         {
-            await transport.SendMessage<KrbAsRep>(credential.Domain, asReq, cancellationToken);
+            var krbAsRep = await transport.SendMessage<KrbAsRep>(credential.Domain, asReq, cancellationToken);
+            paData = krbAsRep.PaData;
         }
         catch (KerberosProtocolException pex)
         {
-            var paData = pex?.Error?.DecodePreAuthentication();
-            if (paData != null)
-            {
-                credential.IncludePreAuthenticationHints(paData);
-            }
+            paData = pex?.Error?.DecodePreAuthentication();
         }   
-        return;
+        if (paData != null)
+        {
+            credential.IncludePreAuthenticationHints(paData);
+        }
     }
 }

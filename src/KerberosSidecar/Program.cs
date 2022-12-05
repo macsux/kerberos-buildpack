@@ -25,10 +25,10 @@ if (Environment.GetEnvironmentVariable("SERVICE_BINDING_ROOT") != null)
 {
     webHostBuilder.Configuration.AddKubernetesServiceBindings();
 }
-
 webHostBuilder.Configuration
     .AddYamlFile("appsettings.yaml", optional: true, reloadOnChange: true)
     .AddYamlFile($"appsettings.{webHostBuilder.Environment.EnvironmentName}.yaml", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables()
     .AddCloudFoundry();
 var services = webHostBuilder.Services;
 services.AddControllers().AddJsonOptions(options =>
@@ -107,6 +107,7 @@ services.AddOptions<KerberosOptions>()
             }
 
             options.Kdc ??= realm;
+            config.Defaults.DnsLookupKdc = false;
             if (realm != null)
             {
                 config.Defaults.DefaultRealm = realm;
