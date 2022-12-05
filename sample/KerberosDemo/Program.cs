@@ -33,18 +33,18 @@ builder.Services.AddOptions<SqlServerBindingInfo>().Configure(c =>
 
 
 services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
-    // .AddNegotiate();
-.AddNegotiate(c => c
-    .EnableLdap(ldap =>
-    {
-ldap.LdapConnection = new LdapConnection(new LdapDirectoryIdentifier("ad.steeltoe.io", true, false), new NetworkCredential("krbservice", Environment.GetEnvironmentVariable("AD_PASSWORD")), AuthType.Basic);
-        ldap.Domain = "STEELTOE.IO";
-        ldap.LdapConnection.SessionOptions.ReferralChasing = ReferralChasingOptions.None;
-        ldap.LdapConnection.SessionOptions.ProtocolVersion = 3; //Setting LDAP Protocol to latest version
-ldap.LdapConnection.Timeout = TimeSpan.FromMinutes(1);
-        ldap.LdapConnection.AutoBind = true;
-ldap.LdapConnection.Bind();
-    }));
+    .AddNegotiate();
+// .AddNegotiate(c => c
+//     .EnableLdap(ldap =>
+//     {
+// ldap.LdapConnection = new LdapConnection(new LdapDirectoryIdentifier("ad.steeltoe.io", true, false), new NetworkCredential("krbservice", Environment.GetEnvironmentVariable("AD_PASSWORD")), AuthType.Basic);
+//         ldap.Domain = "STEELTOE.IO";
+//         ldap.LdapConnection.SessionOptions.ReferralChasing = ReferralChasingOptions.None;
+//         ldap.LdapConnection.SessionOptions.ProtocolVersion = 3; //Setting LDAP Protocol to latest version
+// ldap.LdapConnection.Timeout = TimeSpan.FromMinutes(1);
+//         ldap.LdapConnection.AutoBind = true;
+// ldap.LdapConnection.Bind();
+//     }));
                 
 services.AddControllers().AddJsonOptions(options =>
 {

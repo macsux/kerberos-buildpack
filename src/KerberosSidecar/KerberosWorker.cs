@@ -139,6 +139,20 @@ public class KerberosWorker : BackgroundService
         var spns = await _spnProvider.GetSpnsForAppRoutes(_cancellationToken);
         var ticketForSelf = await _options.CurrentValue.KerberosClient.GetServiceTicket(credentials.UserName);
         var kvno = ticketForSelf.Ticket.EncryptedPart.KeyVersionNumber;
+        _logger.LogDebug("Kvno for {ServicePrincipal} is {Kvno}", credentials.UserName, kvno);
+        foreach (var (encryptionType, salt) in credentials.Salts)
+        {
+            _logger.LogDebug("Service principal {ServicePrincipal} uses {Salt} with encryption type of {EncryptionType}", credentials.UserName, salt, encryptionType);
+        }
+
+        if (!credentials.Salts.Any())
+        {
+            _logger.LogWarning("No salts have been retrieved for the service principal. Keytab will be incorrect");
+        }
+        if (spns.Count == 0)
+        {
+            _logger.LogWarning("No SPNs have been defined for the app, so authenticating end users will not work");
+        }
         
         var realm = credentials.Domain;
         List<KerberosKey> kerberosKeys = new();
@@ -149,12 +163,15 @@ public class KerberosWorker : BackgroundService
             {
                 var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_SRV_HST, realm, new[] { spn }), salt: salt, etype: encryptionType, kvno: kvno);
                 kerberosKeys.Add(key);
+                _logger.LogInformation("Keytab entry added [ServicePrincipal: {Spn}, Salt: {Salt}, EncType: {Etype}, Kvno: {Kvno}]", spn, salt, encryptionType, kvno);
             }
         }
         foreach (var (encryptionType, salt) in credentials.Salts)
         {
             var key = new KerberosKey(_options.CurrentValue.Password, new PrincipalName(PrincipalNameType.NT_PRINCIPAL, realm, new[] { credentials.UserName }), salt: salt, etype: encryptionType, kvno: kvno);
             kerberosKeys.Add(key);
+            _logger.LogInformation("Keytab entry added [ServicePrincipal: {Spn}, Salt: {Salt}, EncType: {Etype}, Kvno: {Kvno}]", credentials.UserName, salt, encryptionType, kvno);
+
         }
         
         var keyTable = new KeyTable(kerberosKeys.ToArray());
