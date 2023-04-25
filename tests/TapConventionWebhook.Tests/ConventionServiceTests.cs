@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -37,7 +38,6 @@ public class ConventionServiceTests : IClassFixture<WebApplicationFactory<Progra
 
     private readonly ITestOutputHelper _output;
     private readonly HttpClient _client;
-    private readonly ITestOutputHelper output;
 
 
     public ConventionServiceTests(WebApplicationFactory<Program> factory, ITestOutputHelper output)

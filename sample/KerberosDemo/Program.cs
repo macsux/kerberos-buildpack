@@ -14,8 +14,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
-using Steeltoe.Configuration.Kubernetes;
-using Steeltoe.Configuration.Kubernetes.ServiceBinding;
+using Steeltoe.Extensions.Configuration.Kubernetes.ServiceBinding;
 
 var builder = WebApplication.CreateBuilder(args);
 if (Environment.GetEnvironmentVariable("SERVICE_BINDING_ROOT") != null)
