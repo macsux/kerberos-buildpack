@@ -63,7 +63,7 @@ services.AddOptions<KerberosOptions>()
     .Configure<IConfiguration>((options, config) =>
     {
         var serviceBindingCredentials = config.GetServiceBindings()
-            .Where(x => x.Tags.Contains("kerberos-service-principal"))
+            .Where(x => x.Tags?.Contains("kerberos-service-principal") ?? false)
             .Select(x => x.GetCredentials<ServiceCredentials>())
             .FirstOrDefault();
         if (serviceBindingCredentials != null)
